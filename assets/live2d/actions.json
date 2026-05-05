@@ -1,0 +1,68 @@
+{
+  "states": {
+    "morning": {
+      "expression": "wink",
+      "motion": "motion_idle",
+      "hiddenDrawables": [
+        "ArtMesh162",
+        "ArtMesh165",
+        "ArtMesh174",
+        "ArtMesh166",
+        "ArtMesh167",
+        "ArtMesh164",
+        "ArtMesh169",
+        "ArtMesh54",
+        "ArtMesh39"
+      ]
+    },
+    "day": {
+      "expression": "wink",
+      "motion": "motion_idle",
+      "hiddenDrawables": [
+        "ArtMesh162",
+        "ArtMesh165",
+        "ArtMesh174",
+        "ArtMesh166",
+        "ArtMesh167",
+        "ArtMesh164",
+        "ArtMesh169",
+        "ArtMesh54",
+        "ArtMesh39"
+      ]
+    },
+    "evening": {
+      "expression": "rose",
+      "motion": "motion_idle",
+      "hiddenDrawables": [
+        "ArtMesh162",
+        "ArtMesh165",
+        "ArtMesh174",
+        "ArtMesh166",
+        "ArtMesh167",
+        "ArtMesh164",
+        "ArtMesh169",
+        "ArtMesh54",
+        "ArtMesh39"
+      ]
+    },
+    "night": {
+      "expression": "awkward",
+      "motion": "motion_idle",
+      "hiddenDrawables": []
+    }
+  },
+  "actions": {
+    "thinking": {
+      "expression": "dizzy",
+      "motion": "motion_idle"
+    },
+    "speaking": {
+      "expression": "wink",
+      "motion": "motion_idle"
+    },
+    "dragging": {
+      "expression": "awkward",
+      "motion": "motion_idle"
+    }
+  }
+}

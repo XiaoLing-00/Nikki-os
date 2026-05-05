@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SoulPet Live2D Viewer</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: transparent;
+      user-select: none;
+      pointer-events: none;
+      border: 0;
+      outline: 0;
+    }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      pointer-events: none;
+    }
+
+    #fallback {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      width: 250px;
+      height: 430px;
+      transform: translateX(-50%);
+      display: block;
+      filter: drop-shadow(0 18px 22px rgba(86, 42, 58, 0.22));
+    }
+
+    .head {
+      position: absolute;
+      left: 52px;
+      top: 18px;
+      width: 146px;
+      height: 146px;
+      border-radius: 50%;
+      background: #ffe0ea;
+      box-shadow: inset 0 -12px 0 rgba(238, 141, 170, 0.26);
+    }
+
+    .hair {
+      position: absolute;
+      left: 36px;
+      top: 0;
+      width: 178px;
+      height: 176px;
+      border-radius: 50% 50% 44% 44%;
+      background: #f4b3c7;
+      z-index: -1;
+    }
+
+    .eye {
+      position: absolute;
+      top: 76px;
+      width: 18px;
+      height: 26px;
+      border-radius: 50%;
+      background: #6c3347;
+      animation: blink 4s infinite;
+    }
+
+    .eye.left { left: 92px; }
+    .eye.right { right: 92px; }
+
+    .mouth {
+      position: absolute;
+      left: 116px;
+      top: 114px;
+      width: 20px;
+      height: 10px;
+      border-bottom: 3px solid #b55071;
+      border-radius: 0 0 20px 20px;
+    }
+
+    .body {
+      position: absolute;
+      left: 42px;
+      top: 158px;
+      width: 166px;
+      height: 246px;
+      border-radius: 58px 58px 24px 24px;
+      background: linear-gradient(#fff7fb, #f4a8c5);
+      box-shadow: inset 0 -18px 0 rgba(219, 83, 133, 0.2);
+    }
+
+    .ribbon {
+      position: absolute;
+      left: 95px;
+      top: 170px;
+      width: 62px;
+      height: 34px;
+      border-radius: 50%;
+      background: #e85f98;
+    }
+
+    @keyframes blink {
+      0%, 94%, 100% { transform: scaleY(1); }
+      96% { transform: scaleY(0.08); }
+    }
+
+    .speaking { animation: bounce 0.55s ease-in-out 2; }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-10px); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+  <div id="fallback">
+    <div class="hair"></div>
+    <div class="head">
+      <div class="eye left"></div>
+      <div class="eye right"></div>
+      <div class="mouth"></div>
+    </div>
+    <div class="body"></div>
+    <div class="ribbon"></div>
+  </div>
+
+  <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.3/dist/pixi.min.js"></script>
+  <script>
+    window.global = window;
+    window.process = window.process || { env: { NODE_ENV: "production" } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.5.0-beta/dist/cubism4.min.js"></script>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script>
+    const fallback = document.getElementById("fallback");
+    let app = null;
+    let model = null;
+    let bridge = null;
+    let actionsConfig = { states: {}, actions: {} };
+    let hiddenDrawableIds = new Set();
+    let baseDrawableOpacities = [];
+    let motionAnimation = null;
+    const pendingLogs = [];
+
+    function log(message) {
+      console.log("[SoulPet]", message);
+      if (bridge && bridge.onLog) {
+        while (pendingLogs.length) bridge.onLog(pendingLogs.shift());
+        bridge.onLog(String(message));
+      } else {
+        pendingLogs.push(String(message));
+      }
+    }
+
+    function modelUrl() {
+      const base = new URL(".", window.location.href);
+      return new URL("nikki/model3.json", base).href;
+    }
+
+    function actionsUrl() {
+      const base = new URL(".", window.location.href);
+      return new URL("actions.json", base).href;
+    }
+
+    function showFallback() {
+      fallback.style.display = "block";
+    }
+
+    async function initLive2D() {
+      log("initLive2D started.");
+      if (!window.PIXI || !window.PIXI.live2d) {
+        log("pixi-live2d-display not available; using fallback.");
+        showFallback();
+        return;
+      }
+      app = new PIXI.Application({
+        view: document.getElementById("stage"),
+        autoStart: true,
+        resizeTo: window,
+        backgroundAlpha: 0,
+        antialias: true,
+        clearBeforeRender: true,
+        preserveDrawingBuffer: true,
+        preferWebGLVersion: 1
+      });
+      model = await PIXI.live2d.Live2DModel.from(modelUrl(), {
+        autoHitTest: false,
+        autoFocus: false
+      });
+      await loadActionsConfig();
+      captureBaseDrawableOpacities();
+      repairInvalidDrawables();
+      fallback.style.display = "none";
+      model.anchor.set(0.5, 0.5);
+      app.stage.addChild(model);
+      fitModel();
+      app.ticker.add(enforceHiddenDrawables);
+      diagnoseMeshes();
+      window.addEventListener("resize", fitModel);
+      log("Live2D model loaded.");
+    }
+
+    function captureBaseDrawableOpacities() {
+      try {
+        const raw = model.internalModel.coreModel.getModel().drawables;
+        baseDrawableOpacities = raw.opacities ? Array.from(raw.opacities) : [];
+      } catch (error) {
+        baseDrawableOpacities = [];
+      }
+    }
+
+    async function loadActionsConfig() {
+      try {
+        const response = await fetch(actionsUrl());
+        if (response.ok) {
+          actionsConfig = await response.json();
+          log("actions.json loaded.");
+        } else {
+          log(`actions.json not loaded: ${response.status}`);
+        }
+      } catch (error) {
+        log(`actions.json load failed: ${error && error.stack ? error.stack : error}`);
+      }
+    }
+
+    function applyDrawableVisibility(hiddenIds) {
+      if (!model || !model.internalModel || !model.internalModel.coreModel) return;
+      hiddenDrawableIds = new Set(hiddenIds || []);
+      const internal = model.internalModel;
+      const raw = internal.coreModel.getModel().drawables;
+      const ids = internal.getDrawableIDs ? internal.getDrawableIDs() : [];
+      ids.forEach((id, index) => {
+        if (!raw.opacities) return;
+        raw.opacities[index] = hiddenDrawableIds.has(id) ? 0 : (baseDrawableOpacities[index] ?? 1);
+      });
+      if (app && app.renderer) app.renderer.render(app.stage);
+      log(`hidden drawables: ${Array.from(hiddenDrawableIds).join(", ") || "none"}`);
+    }
+
+    function enforceHiddenDrawables() {
+      if (!hiddenDrawableIds.size || !model || !model.internalModel || !model.internalModel.coreModel) return;
+      const internal = model.internalModel;
+      const raw = internal.coreModel.getModel().drawables;
+      const ids = internal.getDrawableIDs ? internal.getDrawableIDs() : [];
+      ids.forEach((id, index) => {
+        if (hiddenDrawableIds.has(id) && raw.opacities) raw.opacities[index] = 0;
+      });
+    }
+
+    function repairInvalidDrawables() {
+      try {
+        const core = model && model.internalModel && model.internalModel.coreModel;
+        const raw = core && core.getModel && core.getModel().drawables;
+        const textureCount = model && model.textures ? model.textures.length : 0;
+        if (!raw || !raw.textureIndices || textureCount <= 0) return;
+
+        const hidden = [];
+        for (let i = 0; i < raw.textureIndices.length; i += 1) {
+          const index = raw.textureIndices[i];
+          if (index < 0 || index >= textureCount) {
+            hidden.push(`#${i}:${index}`);
+            if (raw.opacities) raw.opacities[i] = 0;
+            if (raw.renderOrders) raw.renderOrders[i] = -1;
+          }
+        }
+        if (hidden.length) {
+          log(`hid drawables with invalid texture indices: ${hidden.join(", ")}`);
+        } else {
+          log(`texture indices ok; textureCount=${textureCount}`);
+        }
+      } catch (error) {
+        log(`invalid drawable repair failed: ${error && error.stack ? error.stack : error}`);
+      }
+    }
+
+    function diagnoseMeshes() {
+      if (!model) return;
+      const internal = model.internalModel;
+      const drawableSummaries = [];
+      let drawableCount = 0;
+      let canvasCount = document.querySelectorAll("canvas").length;
+      let size = `${Math.round(internal.originalWidth || internal.width)}x${Math.round(internal.originalHeight || internal.height)}`;
+      try {
+        const ids = internal.getDrawableIDs ? internal.getDrawableIDs() : [];
+        const raw = internal.coreModel && internal.coreModel.getModel ? internal.coreModel.getModel().drawables : {};
+        drawableCount = ids.length;
+        ids.forEach((id, index) => {
+          let vertices = [];
+          try {
+            vertices = internal.getDrawableVertices(index);
+          } catch (error) {
+            try { vertices = internal.getDrawableVertices(id); } catch (nested) {}
+          }
+          if (!vertices || vertices.length < 4) return;
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (let i = 0; i < vertices.length; i += 2) {
+            const x = vertices[i];
+            const y = vertices[i + 1];
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+          const width = maxX - minX;
+          const height = maxY - minY;
+          const area = width * height;
+          const centerX = minX + width / 2;
+          const centerY = minY + height / 2;
+          const opacity = raw.opacities ? raw.opacities[index] : "?";
+          const texture = raw.textureIndices ? raw.textureIndices[index] : "?";
+          const order = raw.renderOrders ? raw.renderOrders[index] : "?";
+          const masks = raw.masks && raw.masks[index] ? raw.masks[index].length : 0;
+          drawableSummaries.push({
+            id, index, area, centerX, centerY, width, height, opacity, texture, order, masks
+          });
+        });
+      } catch (error) {
+        log(`drawable diagnostic failed: ${error && error.stack ? error.stack : error}`);
+      }
+
+      const format = item =>
+        `#${item.index} ${item.id} @${Math.round(item.centerX)},${Math.round(item.centerY)} ` +
+        `${Math.round(item.width)}x${Math.round(item.height)} area=${Math.round(item.area)} ` +
+        `tex=${item.texture} order=${item.order} opacity=${item.opacity} masks=${item.masks}`;
+
+      const topArea = drawableSummaries
+        .slice()
+        .sort((a, b) => b.area - a.area)
+        .slice(0, 16)
+        .map(format);
+
+      const centerX = (internal.originalWidth || internal.width) / 2;
+      const centerY = (internal.originalHeight || internal.height) * 0.55;
+      const centerHits = drawableSummaries
+        .filter(item =>
+          Math.abs(item.centerX - centerX) < (internal.originalWidth || internal.width) * 0.32 &&
+          Math.abs(item.centerY - centerY) < (internal.originalHeight || internal.height) * 0.32
+        )
+        .sort((a, b) => b.area - a.area)
+        .slice(0, 16)
+        .map(format);
+
+      log(`model size=${size}; drawableCount=${drawableCount}; canvas=${canvasCount}`);
+      log(`top drawable areas: ${topArea.join(" | ") || "none"}`);
+      log(`center drawable candidates: ${centerHits.join(" | ") || "none"}`);
+    }
+
+    function fitModel() {
+      if (!model || !app) return;
+      if (app.renderer) {
+        app.renderer.resize(window.innerWidth, window.innerHeight);
+      }
+      const baseWidth = model.internalModel && model.internalModel.width ? model.internalModel.width : model.width / (model.scale.x || 1);
+      const baseHeight = model.internalModel && model.internalModel.height ? model.internalModel.height : model.height / (model.scale.y || 1);
+      const scale = Math.min(window.innerWidth / baseWidth * 0.82, window.innerHeight / baseHeight * 0.96);
+      model.scale.set(scale);
+      model.x = window.innerWidth / 2;
+      model.y = window.innerHeight * 0.56;
+    }
+
+    function setParam(id, value) {
+      try {
+        const core = model && model.internalModel && model.internalModel.coreModel;
+        if (core && core.setParameterValueById) core.setParameterValueById(id, value);
+      } catch (error) {}
+    }
+
+    function animateParams(frames, duration = 900) {
+      if (!model) return;
+      if (motionAnimation) cancelAnimationFrame(motionAnimation);
+      const start = performance.now();
+      const initialScale = model.scale.x;
+
+      function interpolate(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const phase = Math.sin(t * Math.PI);
+        const wave = Math.sin(t * Math.PI * 2);
+        const values = frames(phase, wave, t);
+        Object.entries(values.params || {}).forEach(([id, value]) => setParam(id, value));
+        if (values.scale) model.scale.set(initialScale * values.scale);
+        if (app && app.renderer) app.renderer.render(app.stage);
+        if (t < 1) {
+          motionAnimation = requestAnimationFrame(interpolate);
+        } else {
+          Object.keys(values.params || {}).forEach(id => setParam(id, 0));
+          model.scale.set(initialScale);
+          motionAnimation = null;
+        }
+      }
+
+      motionAnimation = requestAnimationFrame(interpolate);
+    }
+
+    function simulateMotion(name) {
+      const motionName = name || "motion_idle";
+      const variants = {
+        motion_idle: () => {},
+        motion_tilt_head: () => animateParams((phase) => ({
+          params: { ParamAngleX: 8 * phase, ParamAngleY: -5 * phase, ParamAngleZ: -8 * phase }
+        }), 900),
+        motion_wave: () => animateParams((_phase, wave) => ({
+          params: { ParamAngleX: 10 * wave, ParamAngleZ: 5 * wave, ParamMouthOpenY: Math.abs(wave) * 0.25 }
+        }), 1100),
+        motion_comfort: () => animateParams((phase, wave) => ({
+          params: { ParamAngleY: -6 * phase, ParamAngleZ: 4 * wave, ParamMouthForm: 0.5 * phase },
+          scale: 1 + 0.025 * phase
+        }), 1300),
+        motion_excited: () => animateParams((phase, wave) => ({
+          params: { ParamAngleX: 12 * wave, ParamAngleY: 8 * phase, ParamMouthOpenY: 0.55 * phase },
+          scale: 1 + 0.04 * phase
+        }), 900),
+        motion_think: () => animateParams((phase, wave) => ({
+          params: { ParamAngleX: -7 * phase, ParamAngleY: 4 * phase, ParamAngleZ: 6 * wave }
+        }), 1200),
+        motion_listen: () => animateParams((phase, wave) => ({
+          params: { ParamAngleX: -5 * phase, ParamAngleY: 5 * phase, ParamAngleZ: -5 * phase, ParamMouthOpenY: Math.abs(wave) * 0.12 }
+        }), 1000),
+        motion_dragging: () => animateParams((phase, wave) => ({
+          params: { ParamAngleX: 14 * wave, ParamAngleZ: 10 * wave, ParamMouthOpenY: 0.35 * phase }
+        }), 700),
+        motion_shy: () => animateParams((phase, wave) => ({
+          params: { ParamAngleY: -8 * phase, ParamAngleZ: 7 * wave, ParamMouthForm: 0.7 * phase }
+        }), 1200)
+      };
+      (variants[motionName] || variants.motion_tilt_head)();
+      log(`simulated motion: ${motionName}`);
+    }
+
+    window.SoulPet = {
+      setExpression(name) {
+        if (model && model.expression) {
+          try {
+            model.expression(name).then(result => log(`expression ${name}: ${result}`));
+          } catch (error) {
+            log(`expression ${name} failed: ${error && error.stack ? error.stack : error}`);
+          }
+        }
+      },
+      playMotion(name) {
+        if (model && model.motion) {
+          try { model.motion("Idle", 0); } catch (error) {}
+        }
+        simulateMotion(name);
+      },
+      speak(expression, motion) {
+        this.setExpression(expression);
+        this.playMotion(motion);
+        fallback.classList.remove("speaking");
+        void fallback.offsetWidth;
+        fallback.classList.add("speaking");
+      },
+      setPointerEnabled(enabled) {
+        return Boolean(enabled);
+      },
+      setIdleState(stateName) {
+        const state = actionsConfig.states && actionsConfig.states[stateName];
+        if (!state) {
+          log(`idle state missing: ${stateName}`);
+          return;
+        }
+        applyDrawableVisibility(state.hiddenDrawables || []);
+        this.speak(state.expression || "wink", state.motion || "motion_idle");
+        log(`idle state applied: ${stateName}`);
+      },
+      refreshViewport() {
+        requestAnimationFrame(() => {
+          fitModel();
+          if (app && app.renderer) app.renderer.render(app.stage);
+          log("viewport refreshed");
+        });
+      }
+    };
+
+    if (window.QWebChannel) {
+      new QWebChannel(qt.webChannelTransport, function(channel) {
+        bridge = channel.objects.pythonBridge;
+        window.pythonBridge = bridge;
+        if (window.pythonBridge) window.pythonBridge.onReady("QWebChannel ready");
+        initLive2D().catch(error => {
+          log(error && error.stack ? error.stack : error);
+          showFallback();
+        });
+      });
+    } else {
+      initLive2D().catch(error => {
+        log(error && error.stack ? error.stack : error);
+        showFallback();
+      });
+    }
+
+    window.addEventListener("error", event => log(event.message || "window error"));
+    window.addEventListener("unhandledrejection", event => log(event.reason || "unhandled rejection"));
+  </script>
+</body>
+</html>
