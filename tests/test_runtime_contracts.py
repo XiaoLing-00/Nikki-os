@@ -13,6 +13,7 @@ from agents.persona_agent import PersonaAgent
 from config.settings import Settings
 from memory.long_memory import LongMemory
 from ui.action_controller import ActionController
+from ui.speech_bubble import SpeechBubble
 from ui.sprite_pet_widget import ANIMATIONS, CELL_HEIGHT, CELL_WIDTH, MOTION_TO_STATE
 
 
@@ -115,9 +116,7 @@ class RuntimeContractsTest(unittest.TestCase):
         self.assertIn("def _show_thinking", source)
         self.assertIn("暖暖正在思考中", source)
         self.assertIn("暖暖正在看屏幕中", source)
-        self.assertIn("self.input_line.setEnabled(not busy)", source)
-        self.assertIn("self.say_button.setEnabled(not busy)", source)
-        self.assertIn("self.voice_button.setEnabled(not busy)", source)
+        self.assertIn("self.bubble.set_controls_enabled(not busy)", source)
 
     def test_ui_supports_two_step_voice_right_click_vision_and_idle_roaming(self) -> None:
         source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
@@ -133,6 +132,17 @@ class RuntimeContractsTest(unittest.TestCase):
         self.assertIn("self.roam_timer", source)
         self.assertIn("def _idle_roam_step", source)
         self.assertIn("pet_window_y", source)
+
+    def test_ui_uses_detached_npc_bubble_that_expands_on_pet_click(self) -> None:
+        source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
+        bubble_source = (ROOT / "ui/speech_bubble.py").read_text(encoding="utf-8")
+
+        self.assertIn("SpeechBubble(self)", source)
+        self.assertIn("self.bubble.show_near", source)
+        self.assertIn("_show_bubble(expanded=True, focus_input=True)", source)
+        self.assertIn("menu_requested", bubble_source)
+        self.assertIn("def _position_near", bubble_source)
+        self.assertTrue(hasattr(SpeechBubble, "submitted"))
 
     def test_visual_refresh_runs_context_building_in_background_worker(self) -> None:
         source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")

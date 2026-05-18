@@ -7,13 +7,7 @@ from PyQt6.QtCore import QObject, QPoint, QRect, QRunnable, Qt, QThreadPool, QTi
 from PyQt6.QtGui import QAction, QCursor
 from PyQt6.QtWidgets import (
     QApplication,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
     QMenu,
-    QPushButton,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -23,6 +17,7 @@ from config.settings import Settings
 from perception.context_builder import ContextBuilder
 from services.asr_service import ASRService
 from ui.action_controller import ActionController
+from ui.speech_bubble import SpeechBubble
 from ui.sprite_pet_widget import SpritePetWidget
 
 
@@ -137,8 +132,8 @@ class MainWindow(QWidget):
 
     def _setup_window(self) -> None:
         self.setWindowTitle("苏暖暖")
-        self.resize(300, 430)
-        self.move(QApplication.primaryScreen().availableGeometry().right() - 340, 220)
+        self.resize(240, 300)
+        self.move(QApplication.primaryScreen().availableGeometry().right() - 280, 260)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
         self.setMouseTracking(True)
@@ -158,85 +153,24 @@ class MainWindow(QWidget):
 
     def _setup_ui(self) -> None:
         self.pet = SpritePetWidget(self.settings.pet_spritesheet_path, self)
-        self.pet.setGeometry(0, 126, self.width(), self.height() - 126)
+        self.pet.setGeometry(0, 0, self.width(), self.height())
         self.pet.show()
 
-        self.bubble = QFrame(self)
-        self.bubble.setObjectName("bubble")
-        self.bubble.setGeometry(14, 12, 272, 124)
-        self.bubble.hide()
-
-        layout = QVBoxLayout(self.bubble)
-        layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(8)
-
-        self.speech_label = QLabel("暖暖在这里陪你。")
-        self.speech_label.setWordWrap(True)
-        self.speech_label.setObjectName("speech")
-        layout.addWidget(self.speech_label)
-
-        self.input_line = QLineEdit()
-        self.input_line.setPlaceholderText("和暖暖说点什么...")
-        self.input_line.returnPressed.connect(self._submit_user_text)
-
-        input_row = QHBoxLayout()
-        input_row.setContentsMargins(0, 0, 0, 0)
-        input_row.setSpacing(8)
-        input_row.addWidget(self.input_line, 1)
-
-        self.voice_button = QPushButton("语音")
-        self.voice_button.setObjectName("voiceButton")
-        self.voice_button.setToolTip("语音输入")
-        self.voice_button.clicked.connect(self._toggle_voice_input)
-        input_row.addWidget(self.voice_button)
-
-        self.say_button = QPushButton("发送")
-        self.say_button.clicked.connect(self._submit_user_text)
-        input_row.addWidget(self.say_button)
-        layout.addLayout(input_row)
-
-        self.setStyleSheet(
-            """
-            MainWindow { background: transparent; border: 0; }
-            QWidget { font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; }
-            #bubble {
-                background: rgba(255, 250, 253, 236);
-                border: 1px solid rgba(255, 170, 204, 180);
-                border-radius: 8px;
-            }
-            #speech {
-                color: #4a2433;
-                font-size: 14px;
-                line-height: 1.4;
-                min-height: 38px;
-            }
-            QLineEdit {
-                min-height: 34px;
-                border: 1px solid rgba(233, 136, 177, 150);
-                border-radius: 7px;
-                padding: 0 10px;
-                color: #4a2433;
-                background: rgba(255, 255, 255, 245);
-            }
-            QPushButton {
-                min-height: 30px;
-                min-width: 54px;
-                border: 0;
-                border-radius: 7px;
-                color: white;
-                background: #e85f98;
-            }
-            QPushButton:hover { background: #d94f88; }
-            QPushButton:disabled { background: rgba(168, 130, 150, 150); }
-            #voiceButton { background: #7b8fd6; }
-            #voiceButton:hover { background: #6d80c8; }
-            """
-        )
+        self.bubble = SpeechBubble(self)
+        self.bubble.submitted.connect(self._submit_user_text)
+        self.bubble.voice_requested.connect(self._toggle_voice_input)
+        self.bubble.menu_requested.connect(self._show_menu)
+        self.setStyleSheet("MainWindow { background: transparent; border: 0; }")
 
     def resizeEvent(self, event) -> None:
         if hasattr(self, "pet"):
-            self.pet.setGeometry(0, 126, self.width(), self.height() - 126)
+            self.pet.setGeometry(0, 0, self.width(), self.height())
         super().resizeEvent(event)
+
+    def moveEvent(self, event) -> None:
+        if hasattr(self, "bubble") and self.bubble.isVisible():
+            self._show_bubble(expanded=self.bubble.expanded, focus_input=False)
+        super().moveEvent(event)
 
     def _remove_native_border(self) -> None:
         try:
@@ -320,7 +254,7 @@ class MainWindow(QWidget):
 
     def leaveEvent(self, event) -> None:
         self.hovered = False
-        if not self.input_line.hasFocus():
+        if not self.bubble.has_input_focus():
             self.bubble_timer.start(1800)
         super().leaveEvent(event)
 
@@ -329,7 +263,7 @@ class MainWindow(QWidget):
             event.key() == Qt.Key.Key_Space
             and self.hovered
             and not self.voice_key_active
-            and not self.input_line.hasFocus()
+            and not self.bubble.has_input_focus()
         ):
             self.voice_key_active = True
             self._toggle_voice_input()
@@ -368,10 +302,18 @@ class MainWindow(QWidget):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
+        was_click = (
+            event.button() == Qt.MouseButton.LeftButton
+            and self.press_pos is not None
+            and not self.dragging
+            and (event.globalPosition().toPoint() - self.press_pos).manhattanLength() < 8
+        )
         self.drag_offset = None
         self.press_pos = None
         if self.dragging:
             self.drag_restore_timer.start(140)
+        elif was_click:
+            self._show_bubble(expanded=True, focus_input=True)
         super().mouseReleaseEvent(event)
 
     def _begin_drag(self) -> None:
@@ -467,11 +409,11 @@ class MainWindow(QWidget):
             next_x = max(left, min(right, self.x() + 36 * self.roam_direction))
         self.move(next_x, target_y)
 
-    def _submit_user_text(self) -> None:
-        text = self.input_line.text().strip()
+    def _submit_user_text(self, text: str | None = None) -> None:
+        text = (text if text is not None else self.bubble.text()).strip()
         if not text:
             return
-        self.input_line.clear()
+        self.bubble.clear_text()
         context = self._window_context()
         self._run_agent(AgentTask(text, context, proactive=False))
 
@@ -492,22 +434,23 @@ class MainWindow(QWidget):
             return
         self.recording_voice = True
         self.busy = True
-        self.input_line.setEnabled(False)
-        self.say_button.setEnabled(False)
-        self.voice_button.setEnabled(True)
-        self.voice_button.setText("结束录音")
+        self.bubble.input_line.setEnabled(False)
+        self.bubble.say_button.setEnabled(False)
+        self.bubble.voice_button.setEnabled(True)
+        self.bubble.set_voice_recording(True)
         self._show_thinking("暖暖正在听 00 说话，录好后再点一次结束录音。", "rose", "motion_listen")
+        self._show_bubble(expanded=True, focus_input=False)
 
     def _stop_voice_input(self) -> None:
         self._show_thinking("暖暖正在整理刚刚听到的话...", "dizzy", "motion_think")
-        self.voice_button.setEnabled(False)
+        self.bubble.voice_button.setEnabled(False)
         worker = ASRTranscribeWorker(self.asr_service)
         worker.signals.finished.connect(self._handle_asr_result)
         self.thread_pool.start(worker)
 
     def _handle_asr_result(self, result: dict) -> None:
         self.recording_voice = False
-        self.voice_button.setText("语音")
+        self.bubble.set_voice_recording(False)
         text = str(result.get("text", "")).strip()
         if not text:
             self._set_busy(False)
@@ -517,9 +460,7 @@ class MainWindow(QWidget):
             self._set_busy(False)
             self._display_text(text, "awkward", "motion_idle")
             return
-        self.input_line.setText(text)
         context = self._window_context()
-        self.input_line.clear()
         self._set_busy(False)
         self._run_agent(AgentTask(text, context, proactive=False), thinking_text="暖暖正在思考中...")
 
@@ -575,28 +516,26 @@ class MainWindow(QWidget):
 
     def _display_text(self, text: str, expression: str, action: str) -> None:
         self.pet.speak(expression, action)
-        self.speech_label.setText(text)
-        self.input_line.setPlaceholderText("回复暖暖...")
-        self._show_bubble()
+        self.bubble.set_text(text)
+        self.bubble.set_placeholder("回复暖暖...")
+        self._show_bubble(expanded=False)
         self.bubble_timer.start(6500)
 
-    def _show_bubble(self) -> None:
-        self.bubble.show()
-        self.bubble.raise_()
-        self.input_line.setFocus(Qt.FocusReason.MouseFocusReason)
+    def _show_bubble(self, expanded: bool = False, focus_input: bool = False) -> None:
+        if expanded:
+            self.bubble_timer.stop()
+        self.bubble.show_near(self.frameGeometry(), expanded=expanded, focus_input=focus_input)
 
     def _show_thinking(self, text: str, expression: str, action: str) -> None:
         self.pet.speak(expression, action)
-        self.speech_label.setText(text)
-        self.input_line.setPlaceholderText("暖暖马上回来...")
-        self._show_bubble()
+        self.bubble.set_text(text)
+        self.bubble.set_placeholder("暖暖马上回来...")
+        self._show_bubble(expanded=False)
         self.bubble_timer.stop()
 
     def _set_busy(self, busy: bool) -> None:
         self.busy = busy
-        self.input_line.setEnabled(not busy)
-        self.say_button.setEnabled(not busy)
-        self.voice_button.setEnabled(not busy)
+        self.bubble.set_controls_enabled(not busy)
 
     def _window_context(self) -> dict:
         context = self.context_builder.build_low_frequency_context()
@@ -627,7 +566,7 @@ class MainWindow(QWidget):
             if msg.message == wm_nchittest:
                 global_pos = QCursor.pos()
                 local = self.mapFromGlobal(global_pos)
-                interactive = QRect(24, 138, 252, 280).contains(local) or self.bubble.geometry().contains(local)
+                interactive = QRect(0, 0, self.width(), self.height()).contains(local)
                 if not interactive:
                     return True, httransparent
         except Exception:

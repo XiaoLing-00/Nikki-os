@@ -206,9 +206,7 @@ class SpeechBubble(QWidget):
         below = QPoint(anchor.center().x() - width // 2, anchor.bottom() + margin)
         return self._clamp(below, available)
 
-    @staticmethod
-    def _clamp(pos: QPoint, available: QRect) -> QPoint:
-        width = 326
-        x = max(available.left(), min(pos.x(), available.right() - width))
-        y = max(available.top(), min(pos.y(), available.bottom()))
+    def _clamp(self, pos: QPoint, available: QRect) -> QPoint:
+        x = max(available.left(), min(pos.x(), available.right() - self.width()))
+        y = max(available.top(), min(pos.y(), available.bottom() - self.height()))
         return QPoint(x, y)
