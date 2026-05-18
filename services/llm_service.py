@@ -29,7 +29,7 @@ class LLMService:
         fallback = {
             "context": {},
             "response": {
-                "text": "唔，暖暖现在还没有连上大脑哒。请检查 DASHSCOPE_API_KEY 呀。",
+                "text": "暖暖现在还没有连上大脑。请检查 DASHSCOPE_API_KEY。",
                 "emotion": "awkward",
                 "action": "motion_idle",
             },
@@ -46,7 +46,7 @@ class LLMService:
             return self._extract_json(content)
         except Exception as exc:
             self.logger.exception("DashScope text call failed: %s", exc)
-            fallback["response"]["text"] = "呜，暖暖刚刚思考卡住了，但我还在晓灵身边呀。"
+            fallback["response"]["text"] = "暖暖刚刚思考卡住了，但我还在 00 身边。"
             return fallback
 
     def describe_image(self, image_path: Path, prompt: str) -> str:

@@ -23,7 +23,7 @@ from config.settings import Settings
 from perception.context_builder import ContextBuilder
 from services.asr_service import ASRService
 from ui.action_controller import ActionController
-from ui.live2d_widget import Live2DWidget
+from ui.sprite_pet_widget import SpritePetWidget
 
 
 @dataclass
@@ -55,7 +55,7 @@ class AgentWorker(QRunnable):
             print(f"[Agent] worker failed: {exc}")
             result = {
                 "response": {
-                    "text": "哎呀，暖暖思考时走神了，不过我还在晓灵旁边呀。",
+                    "text": "刚刚思考卡住了，不过暖暖还在 00 旁边。",
                     "emotion": "awkward",
                     "action": "motion_idle",
                 }
@@ -86,7 +86,7 @@ class VisualAgentWorker(QRunnable):
             print(f"[Agent] visual worker failed: {exc}")
             result = {
                 "response": {
-                    "text": "唔，暖暖刚刚看屏幕时卡住了，但没有保存截图哒。",
+                    "text": "暖暖刚刚看屏幕时卡住了，但没有保存截图。",
                     "emotion": "awkward",
                     "action": "motion_idle",
                 }
@@ -137,8 +137,8 @@ class MainWindow(QWidget):
 
     def _setup_window(self) -> None:
         self.setWindowTitle("苏暖暖")
-        self.resize(430, 660)
-        self.move(QApplication.primaryScreen().availableGeometry().right() - 470, 120)
+        self.resize(300, 430)
+        self.move(QApplication.primaryScreen().availableGeometry().right() - 340, 220)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
         self.setMouseTracking(True)
@@ -157,32 +157,26 @@ class MainWindow(QWidget):
         self._remove_native_border()
 
     def _setup_ui(self) -> None:
-        self.live2d = Live2DWidget(
-            self.settings.live2d_viewer_path,
-            self.settings.live2d_model_path,
-            self,
-        )
-        self.live2d.setGeometry(0, 0, self.width(), self.height())
-        self.live2d.show()
-        self.live2d.bridge.log.connect(self._display_live2d_log)
-        self.live2d.bridge.ready.connect(self._display_live2d_log)
+        self.pet = SpritePetWidget(self.settings.pet_spritesheet_path, self)
+        self.pet.setGeometry(0, 126, self.width(), self.height() - 126)
+        self.pet.show()
 
         self.bubble = QFrame(self)
         self.bubble.setObjectName("bubble")
-        self.bubble.setGeometry(22, 18, 386, 132)
+        self.bubble.setGeometry(14, 12, 272, 124)
         self.bubble.hide()
 
         layout = QVBoxLayout(self.bubble)
         layout.setContentsMargins(14, 12, 14, 12)
         layout.setSpacing(8)
 
-        self.speech_label = QLabel("暖暖在这里陪你呀。")
+        self.speech_label = QLabel("暖暖在这里陪你。")
         self.speech_label.setWordWrap(True)
         self.speech_label.setObjectName("speech")
         layout.addWidget(self.speech_label)
 
         self.input_line = QLineEdit()
-        self.input_line.setPlaceholderText("和暖暖说点什么呀...")
+        self.input_line.setPlaceholderText("和暖暖说点什么...")
         self.input_line.returnPressed.connect(self._submit_user_text)
 
         input_row = QHBoxLayout()
@@ -240,8 +234,8 @@ class MainWindow(QWidget):
         )
 
     def resizeEvent(self, event) -> None:
-        if hasattr(self, "live2d"):
-            self.live2d.setGeometry(0, 0, self.width(), self.height())
+        if hasattr(self, "pet"):
+            self.pet.setGeometry(0, 126, self.width(), self.height() - 126)
         super().resizeEvent(event)
 
     def _remove_native_border(self) -> None:
@@ -382,17 +376,17 @@ class MainWindow(QWidget):
 
     def _begin_drag(self) -> None:
         self.dragging = True
-        self.live2d.set_pointer_enabled(False)
-        self.live2d.speak("awkward", "motion_dragging")
+        self.pet.set_pointer_enabled(False)
+        self.pet.speak("awkward", "motion_dragging")
         self.drag_restore_timer.start(1800)
 
     def _end_drag(self) -> None:
         self.dragging = False
-        self.live2d.show()
-        self.live2d.raise_()
+        self.pet.show()
+        self.pet.raise_()
         self.bubble.raise_()
-        self.live2d.set_pointer_enabled(True)
-        self.live2d.refresh_viewport()
+        self.pet.set_pointer_enabled(True)
+        self.pet.refresh_viewport()
 
     def contextMenuEvent(self, event) -> None:
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
@@ -405,7 +399,7 @@ class MainWindow(QWidget):
         refresh = QAction("强制刷新", self)
         refresh.triggered.connect(self._visual_refresh)
         settings = QAction("设置", self)
-        settings.triggered.connect(lambda: self._display_text("密钥请写入项目根目录 .env 文件哒。", "wink", "motion_idle"))
+        settings.triggered.connect(lambda: self._display_text("密钥请写入项目根目录 .env 文件。", "wink", "motion_idle"))
         expression_menu = menu.addMenu("测试表情")
         for expression in ("wink", "love", "cry", "awkward", "dizzy", "rose", "punch"):
             action = QAction(expression, self)
@@ -423,8 +417,8 @@ class MainWindow(QWidget):
         menu.addAction(quit_action)
         menu.exec(pos)
 
-    def _display_live2d_log(self, message: str) -> None:
-        print(f"[Live2D] {message}")
+    def _display_pet_log(self, message: str) -> None:
+        print(f"[Pet] {message}")
 
     def _startup_greeting(self) -> None:
         if self.busy or self.dragging:
@@ -434,11 +428,11 @@ class MainWindow(QWidget):
         context["time_state"] = self._current_idle_state()
         self._run_agent(
             AgentTask(
-                "系统刚启动，暖暖根据当前时间向用户做一句自然的开机问候。",
+                "系统刚启动，暖暖根据当前时间向 00 做一句自然的开机问候。",
                 context,
                 proactive=True,
             ),
-            thinking_text="暖暖正在醒来呀...",
+            thinking_text="暖暖正在醒来...",
         )
 
     def _current_idle_state(self) -> str:
@@ -454,7 +448,7 @@ class MainWindow(QWidget):
     def _apply_time_idle_state(self) -> None:
         if self.dragging:
             return
-        self.live2d.set_idle_state(self._current_idle_state())
+        self.pet.set_idle_state(self._current_idle_state())
 
     def _idle_roam_step(self) -> None:
         if self.busy or self.dragging or self.bubble.isVisible():
@@ -494,7 +488,7 @@ class MainWindow(QWidget):
             self.asr_service.start_recording()
         except Exception as exc:
             print(f"[ASR] start failed: {exc}")
-            self._display_text("唔，麦克风没有打开。请允许 python.exe 使用麦克风后再试一次呀。", "awkward", "motion_idle")
+            self._display_text("麦克风没有打开。请允许 python.exe 使用麦克风后再试一次。", "awkward", "motion_idle")
             return
         self.recording_voice = True
         self.busy = True
@@ -502,10 +496,10 @@ class MainWindow(QWidget):
         self.say_button.setEnabled(False)
         self.voice_button.setEnabled(True)
         self.voice_button.setText("结束录音")
-        self._show_thinking("暖暖正在听晓灵说话呀，录好后再点一次结束录音。", "rose", "motion_listen")
+        self._show_thinking("暖暖正在听 00 说话，录好后再点一次结束录音。", "rose", "motion_listen")
 
     def _stop_voice_input(self) -> None:
-        self._show_thinking("暖暖正在整理刚刚听到的话呀...", "dizzy", "motion_think")
+        self._show_thinking("暖暖正在整理刚刚听到的话...", "dizzy", "motion_think")
         self.voice_button.setEnabled(False)
         worker = ASRTranscribeWorker(self.asr_service)
         worker.signals.finished.connect(self._handle_asr_result)
@@ -517,7 +511,7 @@ class MainWindow(QWidget):
         text = str(result.get("text", "")).strip()
         if not text:
             self._set_busy(False)
-            self._display_text("唔，暖暖没有听清，可以再说一次吗？", "awkward", "motion_idle")
+            self._display_text("暖暖没有听清，可以再说一次吗？", "awkward", "motion_idle")
             return
         if "不可用" in text or "没听清" in text:
             self._set_busy(False)
@@ -527,7 +521,7 @@ class MainWindow(QWidget):
         context = self._window_context()
         self.input_line.clear()
         self._set_busy(False)
-        self._run_agent(AgentTask(text, context, proactive=False), thinking_text="暖暖正在思考中呀...")
+        self._run_agent(AgentTask(text, context, proactive=False), thinking_text="暖暖正在思考中...")
 
     def _observe_low_frequency(self) -> None:
         context = self._window_context()
@@ -537,24 +531,24 @@ class MainWindow(QWidget):
         context.update(trigger.get("context_patch", {}))
         self._run_agent(
             AgentTask(trigger["message"], context, proactive=True),
-            thinking_text="暖暖正在想怎么开口呀...",
+            thinking_text="暖暖正在想怎么开口...",
         )
 
     def _visual_refresh(self) -> None:
         if self.busy:
             return
         self._set_busy(True)
-        self._show_thinking("暖暖正在看屏幕中呀...", "dizzy", "motion_tilt_head")
+        self._show_thinking("暖暖正在看屏幕中...", "dizzy", "motion_tilt_head")
         worker = VisualAgentWorker(
             self.context_builder,
             self.persona_agent,
-            "请根据刚刚看到的屏幕内容判断晓灵在做什么，并做出相对应的自然反应。",
+            "请根据刚刚看到的屏幕内容判断 00 在做什么，并做出相对应的自然反应。",
             proactive=False,
         )
         worker.signals.finished.connect(self._handle_agent_result)
         self.thread_pool.start(worker)
 
-    def _run_agent(self, task: AgentTask, thinking_text: str = "暖暖正在思考中呀...") -> None:
+    def _run_agent(self, task: AgentTask, thinking_text: str = "暖暖正在思考中...") -> None:
         if self.busy:
             return
         self._set_busy(True)
@@ -576,11 +570,11 @@ class MainWindow(QWidget):
             f"action={action}",
             f"text={response.get('text', '')[:80]}",
         )
-        self._display_text(response.get("text", "暖暖在这里呀。"), expression, action)
+        self._display_text(response.get("text", "暖暖在这里。"), expression, action)
         self._set_busy(False)
 
     def _display_text(self, text: str, expression: str, action: str) -> None:
-        self.live2d.speak(expression, action)
+        self.pet.speak(expression, action)
         self.speech_label.setText(text)
         self.input_line.setPlaceholderText("回复暖暖...")
         self._show_bubble()
@@ -592,7 +586,7 @@ class MainWindow(QWidget):
         self.input_line.setFocus(Qt.FocusReason.MouseFocusReason)
 
     def _show_thinking(self, text: str, expression: str, action: str) -> None:
-        self.live2d.speak(expression, action)
+        self.pet.speak(expression, action)
         self.speech_label.setText(text)
         self.input_line.setPlaceholderText("暖暖马上回来...")
         self._show_bubble()
@@ -633,7 +627,7 @@ class MainWindow(QWidget):
             if msg.message == wm_nchittest:
                 global_pos = QCursor.pos()
                 local = self.mapFromGlobal(global_pos)
-                interactive = QRect(35, 70, 360, 560).contains(local) or self.bubble.geometry().contains(local)
+                interactive = QRect(24, 138, 252, 280).contains(local) or self.bubble.geometry().contains(local)
                 if not interactive:
                     return True, httransparent
         except Exception:

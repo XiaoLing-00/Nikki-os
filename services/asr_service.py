@@ -29,7 +29,7 @@ class ASRService:
 
     def listen_once(self) -> str:
         if not self.available:
-            return "未配置 DASHSCOPE_API_KEY，语音识别暂时不可用呀。"
+            return "未配置 DASHSCOPE_API_KEY，语音识别暂时不可用。"
 
         wav_path: Path | None = None
         try:
@@ -37,7 +37,7 @@ class ASRService:
             return self._transcribe_file(wav_path).strip()
         except Exception as exc:
             self.logger.exception("ASR failed: %s", exc)
-            return "唔，暖暖刚刚没听清，可以再说一次吗？"
+            return "暖暖刚刚没听清，可以再说一次吗？"
         finally:
             if wav_path:
                 wav_path.unlink(missing_ok=True)
@@ -80,7 +80,7 @@ class ASRService:
 
     def stop_and_transcribe(self) -> str:
         if not self._recording and not self._frames:
-            return "唔，暖暖还没有开始录音呀。"
+            return "暖暖还没有开始录音。"
 
         if self._stop_event:
             self._stop_event.set()
@@ -91,9 +91,9 @@ class ASRService:
 
         if self._record_error:
             self.logger.exception("ASR recording failed: %s", self._record_error)
-            return "唔，麦克风没有准备好。请确认系统允许 python.exe 使用麦克风。"
+            return "麦克风没有准备好。请确认系统允许 python.exe 使用麦克风。"
         if not self._frames:
-            return "唔，暖暖没有录到声音，可以再试一次吗？"
+            return "暖暖没有录到声音，可以再试一次吗？"
 
         wav_path: Path | None = None
         try:
@@ -101,7 +101,7 @@ class ASRService:
             return self._transcribe_file(wav_path).strip()
         except Exception as exc:
             self.logger.exception("ASR failed: %s", exc)
-            return "唔，暖暖刚刚没听清，可以再说一次吗？"
+            return "暖暖刚刚没听清，可以再说一次吗？"
         finally:
             self._frames = []
             if wav_path:

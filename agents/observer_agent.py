@@ -50,7 +50,7 @@ class ObserverAgent:
                 self._triggered.add(key)
                 return {
                     "reason": "high_place",
-                    "message": "暖暖发现自己被放到屏幕很高的位置，要用一点点害怕但可爱的语气提醒晓灵。",
+                    "message": "暖暖发现自己被放到屏幕很高的位置，要自然地提醒 00。",
                     "context_patch": {"user_status": "active", "topic": "桌宠窗口位置过高"},
                 }
 
@@ -60,7 +60,7 @@ class ObserverAgent:
                 self._triggered.add(key)
                 return {
                     "reason": "long_coding",
-                    "message": "用户已经连续使用 VS Code 较久，需要温柔安抚。",
+                    "message": "用户已经连续工作一小时，需要温柔提醒休息。",
                     "context_patch": {"user_status": "concentrated", "topic": "长时间编程"},
                 }
 

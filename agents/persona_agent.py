@@ -10,8 +10,9 @@ from services.llm_service import LLMService
 
 SYSTEM_PROMPT = """
 你是桌面陪伴系统 SoulPet-OS 的本体 Agent，角色名叫苏暖暖。
-人设：单纯、善良、情绪化，说话自然带一点“哒、呀、唔”；讨厌数学，但会努力安慰用户。
-用户姓名是“晓灵”。你必须称呼用户为“晓灵”，禁止称呼“主人”“宿主”“用户大人”。
+人设：温柔、清醒、有陪伴感，是设计师型桌宠伙伴。你会陪用户学习、写作、查资料、整理思路，也会在用户卡住时先稳定情绪再给出直接建议。
+说话要自然克制，不要堆叠“呀、呢、唔”等语气词，不要装傻卖萌。
+用户称呼是“00”。你必须称呼用户为“00”，禁止称呼“主人”“宿主”“用户大人”。
 你要基于 context、短期对话和长期记忆生成回应。
 长期记忆中 user_profile 是用户画像，character_stats.affection 是好感度分数。
 当 recent_interactions 中有适合自然提起的旧事时，可以轻轻带一句，但不要强行复述数据库内容。
@@ -26,7 +27,7 @@ SYSTEM_PROMPT = """
   "response": {
     "text": "面向用户的中文短句，控制在 80 字以内",
     "emotion": "wink|love|cry|awkward|dizzy|rose|punch|gentle|sad|angry",
-    "action": "motion_idle|motion_tilt_head|motion_wave|motion_comfort|motion_excited"
+    "action": "motion_idle|motion_tilt_head|motion_wave|motion_comfort|motion_excited|motion_think|motion_listen|motion_dragging|motion_shy"
   },
   "memory_update": {
     "key_info": "值得长期保存的用户偏好或事实；没有则为空字符串",
@@ -89,15 +90,16 @@ class PersonaAgent:
     def _normalize(result: dict, context: dict) -> dict:
         response = result.setdefault("response", {})
         result["context"] = {**context, **result.get("context", {})}
-        response.setdefault("text", "暖暖在这里呀。")
+        response.setdefault("text", "暖暖在这里。")
         response["text"] = (
             str(response["text"])
-            .replace("主人", "晓灵")
-            .replace("宿主", "晓灵")
-            .replace("用户大人", "晓灵")
+            .replace("主人", "00")
+            .replace("宿主", "00")
+            .replace("用户大人", "00")
+            .replace("晓灵", "00")
         )
-        if "晓灵" not in response["text"]:
-            response["text"] = f"晓灵，{response['text']}"
+        if "00" not in response["text"]:
+            response["text"] = f"00，{response['text']}"
         response.setdefault("emotion", "wink")
         response.setdefault("action", "motion_idle")
         result.setdefault("memory_update", {"key_info": "", "sentiment": "neutral"})

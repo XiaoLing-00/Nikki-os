@@ -75,7 +75,7 @@ class LongMemory:
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO user_profile(key, value, updated_at)
-                    VALUES('name', '晓灵', ?)
+                    VALUES('name', '00', ?)
                     """,
                     (now,),
                 )

@@ -39,11 +39,13 @@ class Settings:
     short_memory_turns: int = 15
     observer_interval_ms: int = 10_000
     idle_state_interval_ms: int = 60_000
-    casual_chat_interval_minutes: int = 20
-    coding_minutes_threshold: int = 45
+    casual_chat_interval_minutes: int = 15
+    coding_minutes_threshold: int = 60
     focus_gap_reset_minutes: int = 5
     database_path: Path = BASE_DIR / "data" / "soulpet.sqlite3"
     screenshot_path: Path = BASE_DIR / "data" / "latest_screen.png"
+    pet_manifest_path: Path = BASE_DIR / "assets" / "pets" / "nuannuan" / "pet.json"
+    pet_spritesheet_path: Path = BASE_DIR / "assets" / "pets" / "nuannuan" / "spritesheet.webp"
     live2d_viewer_path: Path = BASE_DIR / "assets" / "live2d" / "viewer.html"
     live2d_model_path: Path = BASE_DIR / "assets" / "live2d" / "nikki" / "model3.json"
     live2d_actions_path: Path = BASE_DIR / "assets" / "live2d" / "actions.json"

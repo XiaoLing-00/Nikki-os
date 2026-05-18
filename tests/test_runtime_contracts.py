@@ -6,11 +6,14 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 
+from PyQt6.QtGui import QImageReader
+
 from agents.observer_agent import ObserverAgent
 from agents.persona_agent import PersonaAgent
 from config.settings import Settings
 from memory.long_memory import LongMemory
 from ui.action_controller import ActionController
+from ui.sprite_pet_widget import ANIMATIONS, CELL_HEIGHT, CELL_WIDTH, MOTION_TO_STATE
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,35 +29,28 @@ class FakeLongMemory:
 
 
 class RuntimeContractsTest(unittest.TestCase):
-    def test_action_controller_maps_persona_emotions_to_existing_expressions(self) -> None:
-        model = json.loads((ROOT / "assets/live2d/nikki/model3.json").read_text(encoding="utf-8"))
-        available = {
-            item["Name"]
-            for item in model["FileReferences"]["Expressions"]
-        }
+    def test_action_controller_maps_persona_actions_to_sprite_states(self) -> None:
         controller = ActionController()
 
         for emotion in ("gentle", "sad", "angry", "happy", "wink", "love", "cry", "awkward", "dizzy", "rose", "punch"):
-            expression, _action = controller.normalize(emotion, "motion_idle")
-            self.assertIn(expression, available)
+            expression, action = controller.normalize(emotion, "motion_think")
+            self.assertIsInstance(expression, str)
+            self.assertEqual(action, "motion_think")
+            self.assertIn(MOTION_TO_STATE[action], ANIMATIONS)
 
-    def test_live2d_model_references_resolve_and_second_texture_is_present(self) -> None:
-        model_path = ROOT / "assets/live2d/nikki/model3.json"
-        model = json.loads(model_path.read_text(encoding="utf-8"))
-        refs = model["FileReferences"]
-        model_root = model_path.parent
+    def test_pet_package_references_codex_spritesheet(self) -> None:
+        pet_dir = ROOT / "assets/pets/nuannuan"
+        manifest = json.loads((pet_dir / "pet.json").read_text(encoding="utf-8"))
+        spritesheet = pet_dir / manifest["spritesheetPath"]
 
-        referenced = [refs["Moc"], refs["Physics"], *refs["Textures"]]
-        referenced.extend(
-            motion["File"]
-            for motions in refs["Motions"].values()
-            for motion in motions
-        )
-        referenced.extend(expression["File"] for expression in refs["Expressions"])
+        self.assertEqual(manifest["id"], "nuannuan")
+        self.assertEqual(manifest["displayName"], "暖暖")
+        self.assertTrue(spritesheet.exists())
 
-        missing = [item for item in referenced if not (model_root / item).exists()]
-        self.assertEqual(missing, [])
-        self.assertGreaterEqual(len(refs["Textures"]), 2)
+        reader = QImageReader(str(spritesheet))
+        size = reader.size()
+        self.assertEqual(size.width(), CELL_WIDTH * 8)
+        self.assertEqual(size.height(), CELL_HEIGHT * 9)
 
     def test_observer_triggers_long_coding_after_threshold(self) -> None:
         settings = Settings(observer_interval_ms=60_000, coding_minutes_threshold=2)
@@ -84,19 +80,19 @@ class RuntimeContractsTest(unittest.TestCase):
     def test_long_memory_contains_design_schema_and_affection_stat(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             memory = LongMemory(Path(tmpdir) / "memory.sqlite3")
-            memory.add_memory("晓灵喜欢服装设计资料", "positive", "dialogue")
+            memory.add_memory("00 喜欢服装设计资料", "positive", "dialogue")
 
-            self.assertEqual(memory.profile()["name"], "晓灵")
+            self.assertEqual(memory.profile()["name"], "00")
             self.assertGreaterEqual(memory.stats()["affection"], 2)
-            self.assertEqual(memory.recent_interactions(1)[0]["summary"], "晓灵喜欢服装设计资料")
+            self.assertEqual(memory.recent_interactions(1)[0]["summary"], "00 喜欢服装设计资料")
 
     def test_main_window_drag_contract_starts_only_after_move_threshold(self) -> None:
         source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
 
         self.assertIn("def _begin_drag", source)
-        self.assertNotIn("self.live2d.hide()", source)
+        self.assertNotIn("self.pet.hide()", source)
         self.assertIn("def _end_drag", source)
-        self.assertIn("self.live2d.show()", source)
+        self.assertIn("self.pet.show()", source)
         self.assertIn("startSystemMove()", source)
         mouse_press = source.split("def mousePressEvent", 1)[1].split("def mouseMoveEvent", 1)[0]
         self.assertNotIn("_begin_drag()", mouse_press)
@@ -176,30 +172,18 @@ class RuntimeContractsTest(unittest.TestCase):
 
         self.assertLess(handler.index("self._set_busy(False)"), handler.rindex("self._run_agent("))
 
-    def test_actions_json_contains_time_based_idle_states(self) -> None:
-        actions = json.loads((ROOT / "assets/live2d/actions.json").read_text(encoding="utf-8"))
-        states = actions["states"]
+    def test_sprite_pet_supports_time_based_idle_states(self) -> None:
+        source = (ROOT / "ui/sprite_pet_widget.py").read_text(encoding="utf-8")
 
-        for state in ("morning", "day", "evening", "night"):
-            self.assertIn(state, states)
-            self.assertIn("expression", states[state])
-            self.assertIn("hiddenDrawables", states[state])
+        self.assertIn("def set_idle_state", source)
+        self.assertIn("if state == \"night\"", source)
+        self.assertIn("self.set_state(\"waiting\")", source)
 
-        self.assertGreater(len(states["day"]["hiddenDrawables"]), 0)
-        self.assertEqual(states["night"]["hiddenDrawables"], [])
-
-    def test_viewer_disables_live2d_pointer_focus_for_stable_dragging(self) -> None:
-        source = (ROOT / "assets/live2d/viewer.html").read_text(encoding="utf-8")
-
-        self.assertIn("autoHitTest: false", source)
-        self.assertIn("autoFocus: false", source)
-        self.assertIn("pointer-events: none", source)
-        self.assertIn("refreshViewport", source)
-        self.assertIn("baseWidth", source)
-        self.assertIn("simulateMotion", source)
-        self.assertIn("motion_comfort", source)
-        self.assertIn("motion_listen", source)
-        self.assertNotIn("window.innerWidth / model.width", source)
+    def test_sprite_pet_widget_defines_codex_atlas_contract(self) -> None:
+        self.assertEqual(CELL_WIDTH, 192)
+        self.assertEqual(CELL_HEIGHT, 208)
+        for state in ("idle", "running-right", "running-left", "waving", "jumping", "failed", "waiting", "running", "review"):
+            self.assertIn(state, ANIMATIONS)
 
     def test_persona_never_calls_user_master(self) -> None:
         result = PersonaAgent._normalize(
@@ -214,14 +198,7 @@ class RuntimeContractsTest(unittest.TestCase):
         )
 
         self.assertNotIn("主人", result["response"]["text"])
-        self.assertIn("晓灵", result["response"]["text"])
-
-    def test_day_states_hide_blanket_drawables(self) -> None:
-        actions = json.loads((ROOT / "assets/live2d/actions.json").read_text(encoding="utf-8"))
-        for state in ("morning", "day", "evening"):
-            hidden = set(actions["states"][state]["hiddenDrawables"])
-            self.assertIn("ArtMesh54", hidden)
-            self.assertIn("ArtMesh39", hidden)
+        self.assertIn("00", result["response"]["text"])
 
 
 if __name__ == "__main__":
