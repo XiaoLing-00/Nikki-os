@@ -39,18 +39,21 @@ def get_active_process_name() -> str:
         return ""
 
 
-def classify_app(title: str) -> str:
+def classify_app(title: str, process_name: str = "") -> str:
     lowered = title.lower()
-    if "visual studio code" in lowered or "vs code" in lowered or "code.exe" in lowered:
+    process = process_name.lower()
+    if "visual studio code" in lowered or "vs code" in lowered or process in {"code.exe", "pycharm64.exe", "idea64.exe"}:
         return "VS Code"
     if "bilibili" in lowered or "哔哩哔哩" in lowered or "b站" in lowered:
         return "Bilibili"
-    if "chrome" in lowered or "edge" in lowered or "firefox" in lowered:
+    if "chrome" in lowered or "edge" in lowered or "firefox" in lowered or process in {"chrome.exe", "msedge.exe", "firefox.exe"}:
         return "Browser"
-    if "word" in lowered:
+    if "word" in lowered or process == "winword.exe":
         return "Word"
-    if "powerpoint" in lowered:
+    if "powerpoint" in lowered or process == "powerpnt.exe":
         return "PowerPoint"
+    if "wps" in lowered or process in {"wps.exe", "wpp.exe"}:
+        return "WPS"
     return title.split(" - ")[-1].strip() if title else "Unknown"
 
 

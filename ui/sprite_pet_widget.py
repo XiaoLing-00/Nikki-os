@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,6 +17,13 @@ CELL_HEIGHT = 208
 class AnimationSpec:
     row: int
     durations: tuple[int, ...]
+
+
+@dataclass
+class CustomAnimationSpec:
+    pixmap: QPixmap
+    durations: tuple[int, ...]
+    fallback: str
 
 
 ANIMATIONS: dict[str, AnimationSpec] = {
@@ -39,7 +47,7 @@ MOTION_TO_STATE = {
     "motion_excited": "jumping",
     "motion_think": "review",
     "motion_listen": "waiting",
-    "motion_dragging": "running",
+    "motion_dragging": "waiting",
     "motion_shy": "waiting",
 }
 
@@ -56,10 +64,17 @@ EXPRESSION_TO_STATE = {
 
 
 class SpritePetWidget(QWidget):
-    def __init__(self, spritesheet_path: Path, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        spritesheet_path: Path,
+        actions_path: Path | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self.spritesheet_path = spritesheet_path
         self.spritesheet = QPixmap(str(spritesheet_path))
+        self.actions_path = actions_path
+        self.custom_actions = self._load_custom_actions(actions_path)
         self.state = "idle"
         self.frame_index = 0
         self.pointer_enabled = True
@@ -79,12 +94,14 @@ class SpritePetWidget(QWidget):
             self.set_state(state)
 
     def play_motion(self, motion: str) -> None:
-        self.set_state(MOTION_TO_STATE.get(motion, motion if motion in ANIMATIONS else "idle"))
+        self.set_state(MOTION_TO_STATE.get(motion, motion if self._has_state(motion) else "idle"))
 
     def speak(self, expression: str, motion: str) -> None:
         state = MOTION_TO_STATE.get(motion)
         if not state:
-            state = EXPRESSION_TO_STATE.get(expression, "idle")
+            state = motion if self._has_state(motion) else EXPRESSION_TO_STATE.get(expression, "idle")
+        elif motion in self.custom_actions:
+            state = motion
         self.set_state(state)
 
     def set_pointer_enabled(self, enabled: bool) -> None:
@@ -100,7 +117,7 @@ class SpritePetWidget(QWidget):
         self.set_state("idle")
 
     def set_state(self, state: str) -> None:
-        if state not in ANIMATIONS:
+        if not self._has_state(state):
             state = "idle"
         if state == self.state:
             return
@@ -114,13 +131,7 @@ class SpritePetWidget(QWidget):
         if self.spritesheet.isNull():
             return
 
-        spec = ANIMATIONS[self.state]
-        source = QRect(
-            self.frame_index * CELL_WIDTH,
-            spec.row * CELL_HEIGHT,
-            CELL_WIDTH,
-            CELL_HEIGHT,
-        )
+        pixmap, source = self._current_pixmap_and_source()
 
         available = self.rect()
         scale = min(available.width() / CELL_WIDTH, available.height() / CELL_HEIGHT)
@@ -135,14 +146,87 @@ class SpritePetWidget(QWidget):
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-        painter.drawPixmap(target, self.spritesheet, source)
+        painter.drawPixmap(target, pixmap, source)
 
     def _advance_frame(self) -> None:
-        spec = ANIMATIONS[self.state]
-        self.frame_index = (self.frame_index + 1) % len(spec.durations)
+        durations = self._current_durations()
+        self.frame_index = (self.frame_index + 1) % len(durations)
         self.timer.start(self._current_duration())
         self.update()
 
     def _current_duration(self) -> int:
-        spec = ANIMATIONS[self.state]
-        return spec.durations[self.frame_index % len(spec.durations)]
+        durations = self._current_durations()
+        return durations[self.frame_index % len(durations)]
+
+    def _current_durations(self) -> tuple[int, ...]:
+        custom = self.custom_actions.get(self.state)
+        if custom and not custom.pixmap.isNull():
+            return custom.durations
+        state = self._base_state_for(self.state)
+        return ANIMATIONS[state].durations
+
+    def _current_pixmap_and_source(self) -> tuple[QPixmap, QRect]:
+        custom = self.custom_actions.get(self.state)
+        if custom and not custom.pixmap.isNull():
+            return (
+                custom.pixmap,
+                QRect(
+                    self.frame_index * CELL_WIDTH,
+                    0,
+                    CELL_WIDTH,
+                    CELL_HEIGHT,
+                ),
+            )
+
+        state = self._base_state_for(self.state)
+        spec = ANIMATIONS[state]
+        return (
+            self.spritesheet,
+            QRect(
+                self.frame_index * CELL_WIDTH,
+                spec.row * CELL_HEIGHT,
+                CELL_WIDTH,
+                CELL_HEIGHT,
+            ),
+        )
+
+    def _base_state_for(self, state: str) -> str:
+        if state in ANIMATIONS:
+            return state
+        custom = self.custom_actions.get(state)
+        if custom and custom.fallback in ANIMATIONS:
+            return custom.fallback
+        return "idle"
+
+    def _has_state(self, state: str) -> bool:
+        return state in ANIMATIONS or state in self.custom_actions
+
+    def _load_custom_actions(self, actions_path: Path | None) -> dict[str, CustomAnimationSpec]:
+        if not actions_path or not actions_path.exists():
+            return {}
+        try:
+            payload = json.loads(actions_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return {}
+
+        actions_root = actions_path.parent
+        loaded: dict[str, CustomAnimationSpec] = {}
+        for action_id, raw in payload.get("actions", {}).items():
+            if not isinstance(raw, dict):
+                continue
+            frames = max(1, int(raw.get("frames") or 1))
+            durations = tuple(int(item) for item in raw.get("durations", []) if int(item) > 0)
+            if not durations:
+                durations = tuple(150 for _ in range(frames))
+            if len(durations) < frames:
+                durations = durations + tuple(durations[-1] for _ in range(frames - len(durations)))
+            durations = durations[:frames]
+
+            file_name = str(raw.get("file", "")).strip()
+            pixmap = QPixmap(str(actions_root / file_name)) if file_name else QPixmap()
+            loaded[action_id] = CustomAnimationSpec(
+                pixmap=pixmap,
+                durations=durations,
+                fallback=str(raw.get("fallback", "idle")),
+            )
+        return loaded

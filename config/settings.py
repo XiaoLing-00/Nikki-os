@@ -46,9 +46,7 @@ class Settings:
     screenshot_path: Path = BASE_DIR / "data" / "latest_screen.png"
     pet_manifest_path: Path = BASE_DIR / "assets" / "pets" / "nuannuan" / "pet.json"
     pet_spritesheet_path: Path = BASE_DIR / "assets" / "pets" / "nuannuan" / "spritesheet.webp"
-    live2d_viewer_path: Path = BASE_DIR / "assets" / "live2d" / "viewer.html"
-    live2d_model_path: Path = BASE_DIR / "assets" / "live2d" / "nikki" / "model3.json"
-    live2d_actions_path: Path = BASE_DIR / "assets" / "live2d" / "actions.json"
+    pet_actions_path: Path = BASE_DIR / "assets" / "pets" / "nuannuan" / "actions" / "actions.json"
     env_file_path: Path | None = None
 
 

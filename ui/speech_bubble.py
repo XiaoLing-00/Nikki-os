@@ -160,6 +160,24 @@ class SpeechBubble(QWidget):
     def has_input_focus(self) -> bool:
         return self.input_line.hasFocus()
 
+    def has_interaction_focus(self) -> bool:
+        focused = QApplication.focusWidget()
+        return any(
+            focused is widget
+            for widget in (
+                self.input_line,
+                self.voice_button,
+                self.say_button,
+                self.menu_button,
+            )
+        )
+
+    def has_pending_input(self) -> bool:
+        return bool(self.input_line.text().strip())
+
+    def should_stay_open(self) -> bool:
+        return self.expanded or self.has_interaction_focus() or self.has_pending_input()
+
     def set_controls_enabled(self, enabled: bool) -> None:
         self.input_line.setEnabled(enabled)
         self.say_button.setEnabled(enabled)

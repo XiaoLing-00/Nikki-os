@@ -11,6 +11,7 @@ from perception.screen_capture import (
     get_active_process_name,
     get_active_window_title,
 )
+from perception.scene_classifier import classify_scene
 from services.llm_service import LLMService
 
 
@@ -22,8 +23,8 @@ class ContextBuilder:
     def build_low_frequency_context(self) -> dict:
         title = get_active_window_title()
         process_name = get_active_process_name()
-        app = classify_app(title)
-        return {
+        app = classify_app(title, process_name)
+        context = {
             "app": app,
             "process_name": process_name,
             "window_title": title,
@@ -32,6 +33,11 @@ class ContextBuilder:
             "perception_mode": "window_title",
             "timestamp": datetime.now().isoformat(timespec="seconds"),
         }
+        scene = classify_scene(context)
+        context["scene"] = scene
+        context["scene_id"] = scene["id"]
+        context["user_status"] = scene["user_status"]
+        return context
 
     def build_visual_context(self) -> dict:
         context = self.build_low_frequency_context()
@@ -47,12 +53,16 @@ class ContextBuilder:
                 context["vision_summary"] = self.llm_service.describe_image(
                     Path(image_path),
                     (
-                        "请用中文概括当前屏幕内容，判断用户在做什么、主题是什么。"
-                        "如果看到手工、服装、穿搭、绘画、代码或视频内容，请明确指出。"
-                        "是否适合桌宠主动回应。输出 80 字以内。"
+                        "请用中文概括当前屏幕内容，判断 00 正在做什么、主题是什么。"
+                        "如果看到代码、论文、PPT、资料检索、视频、游戏、会议、报错或 AI 对话，请明确指出。"
+                        "输出 80 字以内，不要包含隐私敏感推断。"
                     ),
                 )
                 context["topic"] = context.get("vision_summary") or context["topic"]
+                scene = classify_scene(context)
+                context["scene"] = scene
+                context["scene_id"] = scene["id"]
+                context["user_status"] = scene["user_status"]
         finally:
             if image_path:
                 Path(image_path).unlink(missing_ok=True)

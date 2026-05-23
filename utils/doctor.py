@@ -7,6 +7,7 @@ import requests
 from PyQt6.QtGui import QImage
 
 from config.settings import BASE_DIR, Settings
+from ui.sprite_pet_widget import CELL_HEIGHT, CELL_WIDTH
 
 
 def run_doctor(settings: Settings, check_api: bool = False) -> int:
@@ -30,7 +31,13 @@ def run_doctor(settings: Settings, check_api: bool = False) -> int:
     checks.append(("vision model", bool(settings.vision_model), settings.vision_model))
     checks.append(("asr model", bool(settings.asr_model), settings.asr_model))
 
-    checks.extend(_check_live2d_assets(settings.live2d_model_path))
+    checks.extend(
+        _check_pet_assets(
+            settings.pet_manifest_path,
+            settings.pet_spritesheet_path,
+            settings.pet_actions_path,
+        )
+    )
     if check_api:
         checks.append(("DashScope ping", *_ping_dashscope(settings)))
 
@@ -48,46 +55,63 @@ def _env_message(path: Path | None) -> str:
     return "未找到 .env 或 env；请在项目根目录配置 DASHSCOPE_API_KEY。"
 
 
-def _check_live2d_assets(model_path: Path) -> list[tuple[str, bool, str]]:
+def _check_pet_assets(
+    manifest_path: Path,
+    spritesheet_path: Path,
+    actions_path: Path,
+) -> list[tuple[str, bool, str]]:
     checks: list[tuple[str, bool, str]] = []
-    root = model_path.parent
-    if not model_path.exists():
-        return [("Live2D model3.json", False, f"missing: {model_path}")]
+    if not manifest_path.exists():
+        return [("Pet manifest", False, f"missing: {manifest_path}")]
 
     try:
-        model = json.loads(model_path.read_text(encoding="utf-8-sig"))
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except Exception as exc:
-        return [("Live2D model3.json", False, f"invalid JSON: {exc}")]
+        return [("Pet manifest", False, f"invalid JSON: {exc}")]
 
-    refs = model.get("FileReferences", {})
-    files: list[str] = []
-    if refs.get("Moc"):
-        files.append(refs["Moc"])
-    if refs.get("Physics"):
-        files.append(refs["Physics"])
-    files.extend(refs.get("Textures", []))
-    for motions in refs.get("Motions", {}).values():
-        files.extend(item.get("File", "") for item in motions)
-    files.extend(item.get("File", "") for item in refs.get("Expressions", []))
+    checks.append(("Pet manifest", manifest.get("id") == "nuannuan", f"id={manifest.get('id', '')}"))
 
-    missing = [item for item in files if item and not (root / item).exists()]
-    checks.append(("Live2D file references", not missing, "missing=" + ", ".join(missing) if missing else "all referenced files exist"))
-
-    textures = refs.get("Textures", [])
-    checks.append(("Live2D texture count", len(textures) >= 2, f"{len(textures)} texture(s): {', '.join(textures)}"))
-    for texture in textures:
-        image_path = root / texture
-        image = QImage(str(image_path))
-        checks.append(
-            (f"texture {Path(texture).name}",
-             not image.isNull(),
-             f"{image.width()}x{image.height()} alpha={image.hasAlphaChannel()} bytes={image_path.stat().st_size if image_path.exists() else 0}"),
+    image = QImage(str(spritesheet_path))
+    expected_size = (CELL_WIDTH * 8, CELL_HEIGHT * 9)
+    actual_size = (image.width(), image.height())
+    checks.append(
+        (
+            "Pet spritesheet",
+            not image.isNull() and actual_size == expected_size,
+            f"{actual_size[0]}x{actual_size[1]} expected={expected_size[0]}x{expected_size[1]}",
         )
+    )
 
-    expressions = [item.get("Name", "") for item in refs.get("Expressions", [])]
-    expected = {"awkward", "cry", "dizzy", "love", "punch", "rose", "wink"}
-    missing_expr = sorted(expected.difference(expressions))
-    checks.append(("Live2D expressions", not missing_expr, "names=" + ", ".join(expressions)))
+    if not actions_path.exists():
+        checks.append(("Pet action manifest", False, f"missing: {actions_path}"))
+        return checks
+
+    try:
+        actions_payload = json.loads(actions_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        checks.append(("Pet action manifest", False, f"invalid JSON: {exc}"))
+        return checks
+
+    actions = actions_payload.get("actions", {})
+    checks.append(("Pet action manifest", bool(actions), f"{len(actions)} action(s)"))
+    actions_root = actions_path.parent
+    optional_missing: list[str] = []
+    for action_id, raw in actions.items():
+        if not isinstance(raw, dict):
+            continue
+        file_name = str(raw.get("file", "")).strip()
+        fallback = str(raw.get("fallback", "")).strip()
+        if file_name and not (actions_root / file_name).exists():
+            optional_missing.append(f"{action_id}->{fallback or 'idle'}")
+    checks.append(
+        (
+            "Pet action fallback coverage",
+            True,
+            "optional missing strips use fallback: " + ", ".join(optional_missing)
+            if optional_missing
+            else "all custom strips present",
+        )
+    )
     return checks
 
 

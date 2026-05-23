@@ -9,9 +9,9 @@
 - Observer Agent：后台观察用户当前桌面情境，判断是否需要主动关怀。
 - Persona Agent：扮演苏暖暖，结合上下文、短期记忆和长期记忆生成回复。
 - Memory Layer：短期 List 保存最近 15 轮上下文，SQLite 保存长期事实记忆。
-- UI Layer：PyQt6 + QWebEngineView 展示透明置顶桌宠、气泡输入框和 Live2D 模型。
+- UI Layer：PyQt6 展示透明置顶 Codex pet sprite 桌宠、NPC 气泡输入框和动作状态。
 
-苏暖暖的人设为：单纯、善良、情绪化，说话会带“哒、呀、唔”等助词；讨厌数学，但会努力安慰用户。
+苏暖暖的人设为：温柔、清醒、有陪伴感的设计师型桌宠伙伴，会称呼用户为“00”，说话自然克制，在学习、写作、查资料和报错时提供安静但及时的陪伴。
 
 ## 2. 功能闭环
 
@@ -35,11 +35,11 @@
 
 ### 主动交互闭环
 
-Observer Agent 根据逻辑模板触发主动关怀：
+Observer Agent 根据桌面场景和节奏触发主动关怀：
 
-- 勤奋模式：连续使用 VS Code 达到阈值后温柔提醒休息。
-- 休闲模式：检测到 Bilibili 后进入轻松陪聊。
-- 深夜模式：零点后提醒休息。
+- 学习/工作模式：写代码、写论文、查资料、准备答辩 PPT 时给出低打扰鼓励。
+- 休闲模式：看视频时以陪看和吃薯片表现为主；游戏、会议保持静默或小动作。
+- 深夜/久坐模式：深夜关心休息，并结合当前任务提醒 00 最近做到哪一步。
 
 ## 3. 运行方式
 
@@ -104,8 +104,8 @@ Persona Agent 与 UI、Memory、Observer 之间统一使用以下 JSON：
 - `context.topic`：窗口标题或视觉摘要形成的主题。
 - `context.user_status`：用户状态，如 `concentrated`、`relaxed`、`tired`。
 - `response.text`：气泡中展示的文本。
-- `response.emotion`：Live2D 表情标识，映射到 `wink/love/cry/awkward/dizzy/rose/punch`。
-- `response.action`：动作标识，当前演示版统一映射到 idle 动作并保留扩展接口。
+- `response.emotion`：语义情绪标识，保留 `wink/love/cry/awkward/dizzy/rose/punch` 等兼容值，由 UI 映射到 sprite 状态。
+- `response.action`：动作语义或 sprite 状态，如 `motion_think`、`reading`、`comfort`、`snack`，由 `ActionController` 统一归一化。
 - `memory_update.key_info`：需要写入 SQLite 的长期事实记忆。
 
 ## 5. 模块实现
@@ -122,7 +122,9 @@ Persona Agent 与 UI、Memory、Observer 之间统一使用以下 JSON：
 | Observer | `agents/observer_agent.py` | 勤奋、休闲、深夜主动触发 |
 | Persona | `agents/persona_agent.py` | 人设提示词、结构化回复、记忆写入 |
 | UI | `ui/main_window.py` | 透明置顶窗口、气泡输入、右键菜单、后台线程 |
-| Live2D | `ui/live2d_widget.py` | QWebEngineView 与 HTML/JS 通信 |
+| Sprite Pet | `ui/sprite_pet_widget.py` | Codex pet atlas 与自定义动作 strip 渲染 |
+| 动作控制 | `ui/action_controller.py` | 情绪、场景与动作语义到 sprite 状态的映射 |
+| 气泡 | `ui/speech_bubble.py` | NPC 对话框、输入框、语音按钮和菜单 |
 
 ## 6. 技术难点
 
@@ -130,18 +132,18 @@ Persona Agent 与 UI、Memory、Observer 之间统一使用以下 JSON：
 2. 结构化大模型输出：Persona Agent 强制模型输出 JSON，保证 UI 和记忆层稳定消费。
 3. 非阻塞交互：DashScope 请求在线程池中执行，避免 PyQt 主线程卡顿。
 4. 截图隐私保护：高频视觉感知使用临时截图文件，Qwen-VL 调用结束后立即删除，不做本地持久化。
-5. 桌宠渲染稳定性：通过 QWebEngineView 承载 HTML/JS Live2D，降低 Python OpenGL 直接渲染的兼容风险。
+5. 桌宠渲染稳定性：通过固定 8x9 Codex pet atlas 和可选动作 strip，避免 Live2D 图层与动作库限制。
 6. 记忆轻量化：SQLite 支撑演示所需长期记忆，ChromaDB 可作为后续向量检索优化方向。
 
 ## 7. 目录结构
 
 ```text
 agents/        Observer Agent 与 Persona Agent
-assets/        Live2D 模型与 viewer.html
+assets/        Codex pet atlas、动作 strip 与旧资源归档
 config/        配置读取
 memory/        短期记忆、长期记忆、记忆触发
 perception/    窗口标题、截图、上下文构建
 services/      DashScope 与 ASR 服务接口
-ui/            PyQt6 桌宠窗口与 Live2D 控制
+ui/            PyQt6 桌宠窗口、sprite 渲染、动作控制与气泡
 utils/         日志工具
 ```

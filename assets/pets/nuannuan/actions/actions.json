@@ -1,0 +1,69 @@
+{
+  "cellWidth": 192,
+  "cellHeight": 208,
+  "actions": {
+    "reading": {
+      "displayName": "看书",
+      "file": "reading.webp",
+      "frames": 6,
+      "durations": [160, 160, 180, 160, 160, 260],
+      "fallback": "review"
+    },
+    "thinking": {
+      "displayName": "思考",
+      "file": "thinking.webp",
+      "frames": 6,
+      "durations": [150, 150, 150, 150, 150, 280],
+      "fallback": "review"
+    },
+    "encourage": {
+      "displayName": "鼓励",
+      "file": "encourage.webp",
+      "frames": 6,
+      "durations": [140, 140, 140, 160, 160, 280],
+      "fallback": "waving"
+    },
+    "comfort": {
+      "displayName": "安慰",
+      "file": "comfort.webp",
+      "frames": 6,
+      "durations": [160, 160, 160, 160, 180, 280],
+      "fallback": "waiting"
+    },
+    "shy": {
+      "displayName": "撒娇",
+      "file": "shy.webp",
+      "frames": 6,
+      "durations": [150, 150, 150, 160, 160, 280],
+      "fallback": "waiting"
+    },
+    "tired": {
+      "displayName": "困倦",
+      "file": "tired.webp",
+      "frames": 6,
+      "durations": [180, 180, 200, 180, 180, 320],
+      "fallback": "waiting"
+    },
+    "cheer": {
+      "displayName": "加油",
+      "file": "cheer.webp",
+      "frames": 6,
+      "durations": [130, 130, 150, 150, 160, 260],
+      "fallback": "jumping"
+    },
+    "snack": {
+      "displayName": "吃番茄味薯片",
+      "file": "snack.webp",
+      "frames": 6,
+      "durations": [180, 180, 180, 200, 200, 320],
+      "fallback": "idle"
+    },
+    "designer_work": {
+      "displayName": "设计师工作",
+      "file": "designer-work.webp",
+      "frames": 6,
+      "durations": [160, 160, 160, 180, 180, 280],
+      "fallback": "review"
+    }
+  }
+}

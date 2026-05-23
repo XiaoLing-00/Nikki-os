@@ -125,6 +125,10 @@ class MainWindow(QWidget):
         self.hovered = False
         self.voice_key_active = False
         self.roam_direction = -1
+        self.last_drag_x = 0
+        self.active_workers: list[tuple[int, QRunnable]] = []
+        self.worker_sequence = 0
+        self.current_worker_token: int | None = None
 
         self._setup_window()
         self._setup_ui()
@@ -152,7 +156,11 @@ class MainWindow(QWidget):
         self._remove_native_border()
 
     def _setup_ui(self) -> None:
-        self.pet = SpritePetWidget(self.settings.pet_spritesheet_path, self)
+        self.pet = SpritePetWidget(
+            self.settings.pet_spritesheet_path,
+            self.settings.pet_actions_path,
+            self,
+        )
         self.pet.setGeometry(0, 0, self.width(), self.height())
         self.pet.show()
 
@@ -168,6 +176,11 @@ class MainWindow(QWidget):
         super().resizeEvent(event)
 
     def moveEvent(self, event) -> None:
+        if hasattr(self, "pet") and self.dragging:
+            delta_x = self.x() - self.last_drag_x
+            if abs(delta_x) >= 3:
+                self.pet.set_state("running-right" if delta_x > 0 else "running-left")
+                self.last_drag_x = self.x()
         if hasattr(self, "bubble") and self.bubble.isVisible():
             self._show_bubble(expanded=self.bubble.expanded, focus_input=False)
         super().moveEvent(event)
@@ -229,7 +242,7 @@ class MainWindow(QWidget):
 
         self.bubble_timer = QTimer(self)
         self.bubble_timer.setSingleShot(True)
-        self.bubble_timer.timeout.connect(self.bubble.hide)
+        self.bubble_timer.timeout.connect(self._hide_bubble_if_safe)
 
         self.idle_state_timer = QTimer(self)
         self.idle_state_timer.timeout.connect(self._apply_time_idle_state)
@@ -238,6 +251,10 @@ class MainWindow(QWidget):
         self.roam_timer = QTimer(self)
         self.roam_timer.timeout.connect(self._idle_roam_step)
         self.roam_timer.start(12_000)
+
+        self.roam_restore_timer = QTimer(self)
+        self.roam_restore_timer.setSingleShot(True)
+        self.roam_restore_timer.timeout.connect(self._apply_time_idle_state)
 
         self.drag_restore_timer = QTimer(self)
         self.drag_restore_timer.setSingleShot(True)
@@ -248,14 +265,13 @@ class MainWindow(QWidget):
 
     def enterEvent(self, event) -> None:
         self.hovered = True
-        self._show_bubble()
+        self._show_bubble(expanded=self.bubble.expanded if self.bubble.isVisible() else False)
         self.setFocus(Qt.FocusReason.MouseFocusReason)
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         self.hovered = False
-        if not self.bubble.has_input_focus():
-            self.bubble_timer.start(1800)
+        self._schedule_bubble_hide(1800)
         super().leaveEvent(event)
 
     def keyPressEvent(self, event) -> None:
@@ -318,17 +334,21 @@ class MainWindow(QWidget):
 
     def _begin_drag(self) -> None:
         self.dragging = True
+        self.last_drag_x = self.x()
+        self.roam_restore_timer.stop()
         self.pet.set_pointer_enabled(False)
-        self.pet.speak("awkward", "motion_dragging")
+        self.pet.set_state("waiting")
         self.drag_restore_timer.start(1800)
 
     def _end_drag(self) -> None:
         self.dragging = False
+        self.drag_restore_timer.stop()
         self.pet.show()
         self.pet.raise_()
         self.bubble.raise_()
         self.pet.set_pointer_enabled(True)
         self.pet.refresh_viewport()
+        self._apply_time_idle_state()
 
     def contextMenuEvent(self, event) -> None:
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
@@ -342,15 +362,30 @@ class MainWindow(QWidget):
         refresh.triggered.connect(self._visual_refresh)
         settings = QAction("设置", self)
         settings.triggered.connect(lambda: self._display_text("密钥请写入项目根目录 .env 文件。", "wink", "motion_idle"))
-        expression_menu = menu.addMenu("测试表情")
-        for expression in ("wink", "love", "cry", "awkward", "dizzy", "rose", "punch"):
-            action = QAction(expression, self)
+        action_menu = menu.addMenu("测试动作")
+        action_items = (
+            ("idle", "待机"),
+            ("waiting", "等待"),
+            ("running-left", "向左移动"),
+            ("running-right", "向右移动"),
+            ("waving", "挥手"),
+            ("jumping", "开心"),
+            ("review", "观察"),
+            ("reading", "看书"),
+            ("thinking", "思考"),
+            ("comfort", "安慰"),
+            ("snack", "吃薯片"),
+            ("cheer", "加油"),
+            ("designer_work", "设计师工作"),
+        )
+        for action_id, label in action_items:
+            action = QAction(label, self)
             action.triggered.connect(
-                lambda _checked=False, name=expression: self._display_text(
-                    f"表情测试：{name}", name, "motion_idle"
+                lambda _checked=False, name=action_id, action_label=label: self._display_text(
+                    f"动作测试：{action_label}", "wink", name
                 )
             )
-            expression_menu.addAction(action)
+            action_menu.addAction(action)
         quit_action = QAction("退出", self)
         quit_action.triggered.connect(QApplication.quit)
         menu.addAction(refresh)
@@ -407,7 +442,9 @@ class MainWindow(QWidget):
         if next_x <= left or next_x >= right:
             self.roam_direction *= -1
             next_x = max(left, min(right, self.x() + 36 * self.roam_direction))
+        self.pet.set_state("running-left" if self.roam_direction < 0 else "running-right")
         self.move(next_x, target_y)
+        self.roam_restore_timer.start(900)
 
     def _submit_user_text(self, text: str | None = None) -> None:
         text = (text if text is not None else self.bubble.text()).strip()
@@ -445,8 +482,7 @@ class MainWindow(QWidget):
         self._show_thinking("暖暖正在整理刚刚听到的话...", "dizzy", "motion_think")
         self.bubble.voice_button.setEnabled(False)
         worker = ASRTranscribeWorker(self.asr_service)
-        worker.signals.finished.connect(self._handle_asr_result)
-        self.thread_pool.start(worker)
+        self._start_worker(worker, self._handle_asr_result, self._asr_timeout_ms())
 
     def _handle_asr_result(self, result: dict) -> None:
         self.recording_voice = False
@@ -486,8 +522,7 @@ class MainWindow(QWidget):
             "请根据刚刚看到的屏幕内容判断 00 在做什么，并做出相对应的自然反应。",
             proactive=False,
         )
-        worker.signals.finished.connect(self._handle_agent_result)
-        self.thread_pool.start(worker)
+        self._start_worker(worker, self._handle_agent_result, self._agent_timeout_ms(visual=True))
 
     def _run_agent(self, task: AgentTask, thinking_text: str = "暖暖正在思考中...") -> None:
         if self.busy:
@@ -495,14 +530,65 @@ class MainWindow(QWidget):
         self._set_busy(True)
         self._show_thinking(thinking_text, "dizzy", "motion_tilt_head")
         worker = AgentWorker(self.persona_agent, task)
-        worker.signals.finished.connect(self._handle_agent_result)
+        self._start_worker(worker, self._handle_agent_result, self._agent_timeout_ms())
+
+    def _start_worker(self, worker: QRunnable, on_finished, timeout_ms: int) -> None:
+        self.worker_sequence += 1
+        token = self.worker_sequence
+        self.current_worker_token = token
+        self.active_workers.append((token, worker))
+        worker.signals.finished.connect(  # type: ignore[attr-defined]
+            lambda result, token=token, worker=worker, on_finished=on_finished: self._finish_worker(
+                token,
+                worker,
+                on_finished,
+                result,
+            )
+        )
+        QTimer.singleShot(timeout_ms, lambda token=token, worker=worker: self._handle_worker_timeout(token, worker))
         self.thread_pool.start(worker)
+
+    def _finish_worker(self, token: int, worker: QRunnable, on_finished, result: dict) -> None:
+        if not self._remove_worker(token, worker):
+            return
+        if self.current_worker_token == token:
+            self.current_worker_token = None
+        on_finished(result)
+
+    def _handle_worker_timeout(self, token: int, worker: QRunnable) -> None:
+        if not self._remove_worker(token, worker):
+            return
+        if self.current_worker_token == token:
+            self.current_worker_token = None
+        if isinstance(worker, ASRTranscribeWorker):
+            self.recording_voice = False
+            self.bubble.set_voice_recording(False)
+            self._set_busy(False)
+            self._display_text("00，语音识别等太久了，我们先回到文字输入。", "awkward", "waiting")
+            return
+        self._set_busy(False)
+        self._display_text("00，这次请求等太久了，我先把界面恢复过来。可以再点我一次。", "awkward", "waiting")
+
+    def _remove_worker(self, token: int, worker: QRunnable) -> bool:
+        for index, (active_token, active_worker) in enumerate(self.active_workers):
+            if active_token == token and active_worker is worker:
+                self.active_workers.pop(index)
+                return True
+        return False
+
+    def _agent_timeout_ms(self, visual: bool = False) -> int:
+        request_count = 2 if visual else 1
+        return max(15_000, self.settings.request_timeout * request_count * 1000 + 10_000)
+
+    def _asr_timeout_ms(self) -> int:
+        return max(15_000, (self.settings.request_timeout + self.settings.asr_record_seconds) * 1000 + 10_000)
 
     def _handle_agent_result(self, result: dict) -> None:
         response = result.get("response", {})
         expression, action = self.actions.normalize(
             response.get("emotion", "wink"),
             response.get("action", "motion_idle"),
+            result.get("context", {}),
         )
         print(
             "[Agent]",
@@ -511,26 +597,43 @@ class MainWindow(QWidget):
             f"action={action}",
             f"text={response.get('text', '')[:80]}",
         )
-        self._display_text(response.get("text", "暖暖在这里。"), expression, action)
+        self._display_text(response.get("text", "暖暖在这里。"), expression, action, result.get("context", {}))
         self._set_busy(False)
 
-    def _display_text(self, text: str, expression: str, action: str) -> None:
-        self.pet.speak(expression, action)
+    def _display_text(self, text: str, expression: str, action: str, context: dict | None = None) -> None:
+        _expression, decided_action = self.actions.normalize(expression, action, context or {})
+        self.pet.speak(expression, decided_action)
         self.bubble.set_text(text)
         self.bubble.set_placeholder("回复暖暖...")
-        self._show_bubble(expanded=False)
-        self.bubble_timer.start(6500)
+        keep_open = self.bubble.should_stay_open() or self.recording_voice
+        self._show_bubble(expanded=keep_open, focus_input=keep_open and self.bubble.has_input_focus())
+        self._schedule_bubble_hide(6500)
 
     def _show_bubble(self, expanded: bool = False, focus_input: bool = False) -> None:
         if expanded:
             self.bubble_timer.stop()
         self.bubble.show_near(self.frameGeometry(), expanded=expanded, focus_input=focus_input)
 
+    def _schedule_bubble_hide(self, delay_ms: int) -> None:
+        if self.bubble.should_stay_open() or self.recording_voice:
+            self.bubble_timer.stop()
+            return
+        self.bubble_timer.start(delay_ms)
+
+    def _hide_bubble_if_safe(self) -> None:
+        if self.bubble.should_stay_open() or self.recording_voice:
+            self.bubble_timer.stop()
+            return
+        self.bubble.hide()
+
     def _show_thinking(self, text: str, expression: str, action: str) -> None:
-        self.pet.speak(expression, action)
+        context = self._window_context()
+        _expression, decided_action = self.actions.normalize(expression, action, context)
+        self.pet.speak(expression, decided_action)
         self.bubble.set_text(text)
         self.bubble.set_placeholder("暖暖马上回来...")
-        self._show_bubble(expanded=False)
+        keep_open = self.bubble.should_stay_open() or self.recording_voice
+        self._show_bubble(expanded=keep_open, focus_input=keep_open and self.bubble.has_input_focus())
         self.bubble_timer.stop()
 
     def _set_busy(self, busy: bool) -> None:
