@@ -1,0 +1,29 @@
+{
+  "validated_at": "2026-08-12T23:40:00+08:00",
+  "platform": "Windows 11 Pro 10.0.26200.8875 AMD64",
+  "python": "3.12.10",
+  "commit": "08ff367a9ab637b0285fdb8e0fb3f2dd1d621d39",
+  "checks": {
+    "ruff": "pass",
+    "pytest": "34 passed",
+    "doctor_source": "pass",
+    "doctor_packaged_exit_code": 0,
+    "microphone_input_devices": 11,
+    "sprite_states_exercised": 15,
+    "sprite_screenshot": "qa/windows-sprite-smoke.png",
+    "sprite_screenshot_sha256": "28bace429ef73332da8d137a3c5c541bb5f1acc3e5dd8976debdaa7575b9979f",
+    "live2d_webchannel_ready": true,
+    "live2d_model_loaded": true,
+    "packaged_sprite_alive_after_seconds": 8,
+    "packaged_live2d_alive_after_seconds": 15
+  },
+  "package": {
+    "type": "PyInstaller onedir",
+    "executable": "dist/NikkiOS/NikkiOS.exe",
+    "sha256": "678E98F888A178CC7D9D7A300BB90D2E39C0F2C451A420A115390D9CC144D5CD"
+  },
+  "notes": [
+    "Cloud AI calls were not exercised because no API key was placed on the test host.",
+    "The validation record intentionally omits host address, account name, and credentials."
+  ]
+}
