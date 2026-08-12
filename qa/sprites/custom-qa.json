@@ -52,7 +52,8 @@
         true,
         true,
         true
-      ]
+      ],
+      "green_spill_pixels": 0
     },
     "listening": {
       "ok": true,
@@ -105,7 +106,8 @@
         true,
         true,
         true
-      ]
+      ],
+      "green_spill_pixels": 0
     },
     "comfort": {
       "ok": true,
@@ -158,7 +160,8 @@
         true,
         true,
         true
-      ]
+      ],
+      "green_spill_pixels": 0
     },
     "dragging": {
       "ok": true,
@@ -211,7 +214,8 @@
         true,
         true,
         true
-      ]
+      ],
+      "green_spill_pixels": 0
     },
     "angry": {
       "ok": true,
@@ -264,7 +268,8 @@
         true,
         true,
         true
-      ]
+      ],
+      "green_spill_pixels": 0
     },
     "love": {
       "ok": true,
@@ -317,7 +322,8 @@
         true,
         true,
         true
-      ]
+      ],
+      "green_spill_pixels": 0
     },
     "sleeping": {
       "ok": true,
@@ -370,7 +376,8 @@
         true,
         true,
         true
-      ]
+      ],
+      "green_spill_pixels": 0
     }
   }
 }

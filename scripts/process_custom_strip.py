@@ -14,10 +14,14 @@ def remove_chroma(image: Image.Image, key=(0, 255, 0), threshold: float = 105) -
     pixels = rgba.load()
     for y in range(rgba.height):
         for x in range(rgba.width):
-            red, green, blue, _alpha = pixels[x, y]
+            red, green, blue, alpha = pixels[x, y]
             distance = ((red - key[0]) ** 2 + (green - key[1]) ** 2 + (blue - key[2]) ** 2) ** 0.5
             if distance <= threshold or (green > red * 1.35 and green > blue * 1.35 and green > 120):
                 pixels[x, y] = (0, 0, 0, 0)
+            elif green > max(red, blue) * 1.05 and green > 40:
+                # Remove green reflected into antialiased outline pixels. The
+                # character palette has no intentional green material.
+                pixels[x, y] = (red, max(red, blue), blue, alpha)
     return rgba
 
 
@@ -65,6 +69,16 @@ def remove_neighbor_fragments(slot: Image.Image) -> Image.Image:
     return slot
 
 
+def despill_resampled_edges(image: Image.Image) -> Image.Image:
+    pixels = image.load()
+    for y in range(image.height):
+        for x in range(image.width):
+            red, green, blue, alpha = pixels[x, y]
+            if 0 < alpha < 240 and green > max(red, blue) * 1.05 and green > 40:
+                pixels[x, y] = (red, max(red, blue), blue, alpha)
+    return image
+
+
 def process(source: Path, output_strip: Path, frames_dir: Path, frame_count: int) -> dict:
     image = Image.open(source).convert("RGB")
     keyed = remove_chroma(image)
@@ -105,6 +119,7 @@ def process(source: Path, output_strip: Path, frames_dir: Path, frame_count: int
         scale = min(182 / sprite.width, 198 / sprite.height)
         size = (max(1, round(sprite.width * scale)), max(1, round(sprite.height * scale)))
         sprite = sprite.resize(size, Image.Resampling.LANCZOS)
+        sprite = despill_resampled_edges(sprite)
         cell = Image.new("RGBA", CELL_SIZE, (0, 0, 0, 0))
         x = (CELL_SIZE[0] - sprite.width) // 2
         y = CELL_SIZE[1] - 5 - sprite.height
