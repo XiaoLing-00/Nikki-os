@@ -145,6 +145,8 @@
     let hiddenDrawableIds = new Set();
     let baseDrawableOpacities = [];
     let motionAnimation = null;
+    let frameIntervals = [];
+    let previousFrameAt = null;
     const pendingLogs = [];
 
     function log(message) {
@@ -200,6 +202,7 @@
       app.stage.addChild(model);
       fitModel();
       app.ticker.add(enforceHiddenDrawables);
+      app.ticker.add(sampleFrameInterval);
       diagnoseMeshes();
       window.addEventListener("resize", fitModel);
       log("Live2D model loaded.");
@@ -250,6 +253,39 @@
       ids.forEach((id, index) => {
         if (hiddenDrawableIds.has(id) && raw.opacities) raw.opacities[index] = 0;
       });
+    }
+
+    function sampleFrameInterval() {
+      const now = performance.now();
+      if (previousFrameAt !== null) {
+        const interval = now - previousFrameAt;
+        if (interval > 0 && interval < 1000) {
+          frameIntervals.push(interval);
+          if (frameIntervals.length > 72000) frameIntervals.shift();
+        }
+      }
+      previousFrameAt = now;
+    }
+
+    function resetFrameStats() {
+      frameIntervals = [];
+      previousFrameAt = null;
+    }
+
+    function getFrameStats() {
+      if (!frameIntervals.length) {
+        return { sampleCount: 0, averageMs: null, p95Ms: null, maximumMs: null, lateFrameRatio: null };
+      }
+      const sorted = frameIntervals.slice().sort((a, b) => a - b);
+      const p95Index = Math.min(sorted.length - 1, Math.ceil(sorted.length * 0.95) - 1);
+      const lateFrames = frameIntervals.filter(value => value > 25).length;
+      return {
+        sampleCount: frameIntervals.length,
+        averageMs: frameIntervals.reduce((sum, value) => sum + value, 0) / frameIntervals.length,
+        p95Ms: sorted[p95Index],
+        maximumMs: sorted[sorted.length - 1],
+        lateFrameRatio: lateFrames / frameIntervals.length
+      };
     }
 
     function repairInvalidDrawables() {
@@ -446,7 +482,32 @@
         }), 1200),
         motion_talk: () => animateParams((_phase, wave) => ({
           params: { ParamMouthOpenY: 0.65 * Math.abs(wave), ParamMouthForm: 0.25, ParamAngleZ: 2 * wave }
-        }), 1500)
+        }), 1500),
+        motion_error: () => animateParams((phase, wave) => ({
+          params: {
+            ParamAngleX: -9 * phase,
+            ParamAngleZ: 5 * wave,
+            ParamEyeLOpen: 0.55 + 0.35 * Math.abs(wave),
+            ParamEyeROpen: 0.55 + 0.35 * Math.abs(wave),
+            ParamBrowLY: -0.45 * phase,
+            ParamBrowLY2: -0.45 * phase,
+            ParamMouthOpenY: 0.25 * phase,
+            ParamMouthForm: -0.5 * phase
+          }
+        }), 1300),
+        motion_sleep: () => animateParams((phase, wave) => ({
+          params: {
+            ParamAngleY: -5 * phase,
+            ParamAngleZ: 2 * wave,
+            ParamEyeLOpen: 1 - phase,
+            ParamEyeROpen: 1 - phase,
+            ParamBreath: 0.5 + 0.5 * wave,
+            ParamMouthOpenY: 0.05 * Math.abs(wave)
+          }
+        }), 3500),
+        motion_roam: () => animateParams((_phase, wave) => ({
+          params: { ParamAngleX: 6 * wave, ParamAngleZ: 3 * wave, ParamBreath: 0.5 + 0.5 * wave }
+        }), 1400)
       };
       (variants[motionName] || variants.motion_tilt_head)();
       log(`simulated motion: ${motionName}`);
@@ -491,6 +552,12 @@
       },
       getParameters() {
         return parameterSnapshot();
+      },
+      resetFrameStats() {
+        resetFrameStats();
+      },
+      getFrameStats() {
+        return getFrameStats();
       },
       setIdleState(stateName) {
         const state = actionsConfig.states && actionsConfig.states[stateName];

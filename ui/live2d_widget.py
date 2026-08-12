@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from PyQt6.QtCore import QObject, Qt, QUrl, pyqtSignal, pyqtSlot
@@ -105,9 +106,38 @@ class Live2DWidget(QWebEngineView):
         )
 
     def get_parameters(self, callback) -> None:
+        def decode(payload) -> None:
+            if not isinstance(payload, str):
+                callback([])
+                return
+            try:
+                parameters = json.loads(payload)
+            except json.JSONDecodeError:
+                parameters = []
+            callback(parameters if isinstance(parameters, list) else [])
+
         self.page().runJavaScript(
-            "window.SoulPet ? window.SoulPet.getParameters() : []",
-            callback,
+            "JSON.stringify(window.SoulPet ? window.SoulPet.getParameters() : [])",
+            decode,
+        )
+
+    def reset_frame_stats(self) -> None:
+        self._run_js("window.SoulPet && window.SoulPet.resetFrameStats();")
+
+    def get_frame_stats(self, callback) -> None:
+        def decode(payload) -> None:
+            if not isinstance(payload, str):
+                callback({})
+                return
+            try:
+                stats = json.loads(payload)
+            except json.JSONDecodeError:
+                stats = {}
+            callback(stats if isinstance(stats, dict) else {})
+
+        self.page().runJavaScript(
+            "JSON.stringify(window.SoulPet ? window.SoulPet.getFrameStats() : {})",
+            decode,
         )
 
     def _run_js(self, script: str) -> None:

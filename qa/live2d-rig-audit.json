@@ -1,0 +1,1528 @@
+{
+  "schema_version": 1,
+  "model": "assets/live2d/nikki/model3.json",
+  "compiled_model": "assets/live2d/nikki/nikki.moc3",
+  "parameter_count": 129,
+  "parameters": [
+    {
+      "id": "Param135",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param134",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param80",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param47",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param49",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param128",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param84",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param83",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param76",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param216",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamAngleX",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamAngleZ",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamAngleY",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamXX",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamYY",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamZZ",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param2",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param3",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param50",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param186",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param181",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param166",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param4",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param5",
+      "minimum": -10,
+      "maximum": 10,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamXX2",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamXX3",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamXX4",
+      "minimum": -30,
+      "maximum": 30,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamBreath",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param99",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param38",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param118",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param10",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param108",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param100",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param101",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param102",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param109",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param104",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param105",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param106",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param98",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param34",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param35",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param92",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param36",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param37",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param97",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param110",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param111",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param112",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param113",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param114",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param115",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param116",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param119",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param120",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param117",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param121",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param122",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param123",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param124",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param125",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param218",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param210",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param211",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param212",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param213",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param214",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param215",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param209",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param221",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param227",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param225",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param183",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param184",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param230",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param229",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param187",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param188",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamMouthForm",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamMouthOpenY",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamMouthX",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamJawOpen",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamJawOpen2",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamJawOpen3",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param21",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param22",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param23",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param24",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param25",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param26",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param30",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param31",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param32",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param33",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param8",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param9",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param11",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param58",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param12",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param13",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param17",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param18",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param19",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param20",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamEyeLOpen",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 1,
+      "value": 1
+    },
+    {
+      "id": "ParamEyeROpen",
+      "minimum": 0,
+      "maximum": 1,
+      "defaultValue": 1,
+      "value": 1
+    },
+    {
+      "id": "ParamEyeBallX",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamEyeBallY",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param48",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param59",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamBrowLY",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "ParamBrowLY2",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param6",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param7",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param231",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param107",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param162",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param163",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param164",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param173",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param103",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param168",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param171",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param165",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param167",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param174",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    },
+    {
+      "id": "Param245",
+      "minimum": -1,
+      "maximum": 1,
+      "defaultValue": 0,
+      "value": 0
+    }
+  ],
+  "standard_driver_support": {
+    "ParamAngleX": true,
+    "ParamAngleY": true,
+    "ParamAngleZ": true,
+    "ParamEyeBallX": true,
+    "ParamEyeBallY": true,
+    "ParamEyeLOpen": true,
+    "ParamEyeROpen": true,
+    "ParamBrowLY": true,
+    "ParamBrowLY2": true,
+    "ParamMouthOpenY": true,
+    "ParamMouthForm": true,
+    "ParamBreath": true
+  },
+  "physics": {
+    "setting_count": 47,
+    "input_count": 115,
+    "output_count": 91,
+    "links": [
+      {
+        "id": "PhysicsSetting1",
+        "name": "身体x",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param2",
+          "Param50"
+        ]
+      },
+      {
+        "id": "PhysicsSetting2",
+        "name": "身体y",
+        "inputs": [
+          "ParamAngleY"
+        ],
+        "outputs": [
+          "Param3"
+        ]
+      },
+      {
+        "id": "PhysicsSetting3",
+        "name": "身体y2",
+        "inputs": [
+          "ParamAngleY"
+        ],
+        "outputs": [
+          "Param166"
+        ]
+      },
+      {
+        "id": "PhysicsSetting4",
+        "name": "身体x2",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param186"
+        ]
+      },
+      {
+        "id": "PhysicsSetting5",
+        "name": "身体z",
+        "inputs": [
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param4"
+        ]
+      },
+      {
+        "id": "PhysicsSetting6",
+        "name": "身体zz",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param5"
+        ]
+      },
+      {
+        "id": "PhysicsSetting7",
+        "name": "腰腿",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param181"
+        ]
+      },
+      {
+        "id": "PhysicsSetting8",
+        "name": "空头x",
+        "inputs": [
+          "ParamAngleX"
+        ],
+        "outputs": [
+          "ParamXX2"
+        ]
+      },
+      {
+        "id": "PhysicsSetting9",
+        "name": "空头y",
+        "inputs": [
+          "ParamAngleY"
+        ],
+        "outputs": [
+          "ParamXX3"
+        ]
+      },
+      {
+        "id": "PhysicsSetting10",
+        "name": "空头z",
+        "inputs": [
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "ParamXX4"
+        ]
+      },
+      {
+        "id": "PhysicsSetting11",
+        "name": "头x",
+        "inputs": [
+          "ParamAngleX",
+          "ParamXX2"
+        ],
+        "outputs": [
+          "ParamXX"
+        ]
+      },
+      {
+        "id": "PhysicsSetting12",
+        "name": "头y",
+        "inputs": [
+          "ParamAngleY",
+          "ParamXX3"
+        ],
+        "outputs": [
+          "ParamYY"
+        ]
+      },
+      {
+        "id": "PhysicsSetting13",
+        "name": "头z",
+        "inputs": [
+          "ParamAngleZ",
+          "ParamXX4"
+        ],
+        "outputs": [
+          "ParamZZ"
+        ]
+      },
+      {
+        "id": "PhysicsSetting14",
+        "name": "瞳缩L",
+        "inputs": [
+          "ParamBreath",
+          "ParamEyeLOpen"
+        ],
+        "outputs": [
+          "Param21"
+        ]
+      },
+      {
+        "id": "PhysicsSetting15",
+        "name": "眼物理L",
+        "inputs": [
+          "ParamEyeLOpen"
+        ],
+        "outputs": [
+          "Param22",
+          "Param23"
+        ]
+      },
+      {
+        "id": "PhysicsSetting16",
+        "name": "高光L",
+        "inputs": [
+          "ParamBreath",
+          "ParamEyeLOpen"
+        ],
+        "outputs": [
+          "Param24",
+          "Param25",
+          "Param26"
+        ]
+      },
+      {
+        "id": "PhysicsSetting17",
+        "name": "睫毛L",
+        "inputs": [
+          "ParamBrowLY",
+          "ParamEyeLOpen"
+        ],
+        "outputs": [
+          "Param30",
+          "Param31"
+        ]
+      },
+      {
+        "id": "PhysicsSetting18",
+        "name": "眼眶L",
+        "inputs": [
+          "ParamBrowLY",
+          "ParamEyeBallY",
+          "ParamEyeLOpen"
+        ],
+        "outputs": [
+          "Param32",
+          "Param33"
+        ]
+      },
+      {
+        "id": "PhysicsSetting19",
+        "name": "左眼联动",
+        "inputs": [
+          "ParamBrowLY",
+          "ParamMouthX"
+        ],
+        "outputs": [
+          "Param6"
+        ]
+      },
+      {
+        "id": "PhysicsSetting20",
+        "name": "右眼联动",
+        "inputs": [
+          "ParamBrowLY2",
+          "ParamMouthX"
+        ],
+        "outputs": [
+          "Param7"
+        ]
+      },
+      {
+        "id": "PhysicsSetting21",
+        "name": "瞳缩R",
+        "inputs": [
+          "ParamBreath",
+          "ParamEyeROpen"
+        ],
+        "outputs": [
+          "Param8"
+        ]
+      },
+      {
+        "id": "PhysicsSetting22",
+        "name": "眼物理R",
+        "inputs": [
+          "ParamEyeROpen"
+        ],
+        "outputs": [
+          "Param11",
+          "Param9"
+        ]
+      },
+      {
+        "id": "PhysicsSetting23",
+        "name": "高光R",
+        "inputs": [
+          "ParamBreath",
+          "ParamEyeROpen"
+        ],
+        "outputs": [
+          "Param12",
+          "Param13",
+          "Param58"
+        ]
+      },
+      {
+        "id": "PhysicsSetting24",
+        "name": "睫毛R",
+        "inputs": [
+          "ParamBrowLY2",
+          "ParamEyeROpen"
+        ],
+        "outputs": [
+          "Param17",
+          "Param18"
+        ]
+      },
+      {
+        "id": "PhysicsSetting25",
+        "name": "眼眶R",
+        "inputs": [
+          "ParamBrowLY2",
+          "ParamEyeBallY",
+          "ParamEyeROpen"
+        ],
+        "outputs": [
+          "Param19",
+          "Param20"
+        ]
+      },
+      {
+        "id": "PhysicsSetting26",
+        "name": "眼球x",
+        "inputs": [
+          "ParamAngleX",
+          "ParamEyeBallX"
+        ],
+        "outputs": [
+          "Param48"
+        ]
+      },
+      {
+        "id": "PhysicsSetting27",
+        "name": "眼球y",
+        "inputs": [
+          "ParamAngleY",
+          "ParamEyeBallY"
+        ],
+        "outputs": [
+          "Param59"
+        ]
+      },
+      {
+        "id": "PhysicsSetting28",
+        "name": "三段头发L",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ",
+          "ParamBreath"
+        ],
+        "outputs": [
+          "Param34",
+          "Param35",
+          "Param92"
+        ]
+      },
+      {
+        "id": "PhysicsSetting29",
+        "name": "三段头发R",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ",
+          "ParamBreath"
+        ],
+        "outputs": [
+          "Param36",
+          "Param37",
+          "Param97"
+        ]
+      },
+      {
+        "id": "PhysicsSetting30",
+        "name": "四段头发L",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ",
+          "ParamBreath"
+        ],
+        "outputs": [
+          "Param111",
+          "Param112",
+          "Param113",
+          "Param114"
+        ]
+      },
+      {
+        "id": "PhysicsSetting31",
+        "name": "四段头发R",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ",
+          "ParamBreath"
+        ],
+        "outputs": [
+          "Param115",
+          "Param116",
+          "Param119",
+          "Param120"
+        ]
+      },
+      {
+        "id": "PhysicsSetting32",
+        "name": "裙子x",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param183",
+          "Param184",
+          "Param229",
+          "Param230"
+        ]
+      },
+      {
+        "id": "PhysicsSetting33",
+        "name": "裙子y",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ",
+          "ParamBreath"
+        ],
+        "outputs": [
+          "Param187",
+          "Param188"
+        ]
+      },
+      {
+        "id": "PhysicsSetting34",
+        "name": "围裙x",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param221",
+          "Param227"
+        ]
+      },
+      {
+        "id": "PhysicsSetting35",
+        "name": "围裙y",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param225"
+        ]
+      },
+      {
+        "id": "PhysicsSetting36",
+        "name": "身蝴蝶结L",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param210",
+          "Param211",
+          "Param212"
+        ]
+      },
+      {
+        "id": "PhysicsSetting37",
+        "name": "身蝴蝶结R",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param213",
+          "Param214",
+          "Param215"
+        ]
+      },
+      {
+        "id": "PhysicsSetting38",
+        "name": "袖子蕾丝L",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param107",
+          "Param162"
+        ]
+      },
+      {
+        "id": "PhysicsSetting39",
+        "name": "袖子蕾丝R",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param168",
+          "Param171"
+        ]
+      },
+      {
+        "id": "PhysicsSetting40",
+        "name": "胳膊L",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param163",
+          "Param164",
+          "Param173"
+        ]
+      },
+      {
+        "id": "PhysicsSetting41",
+        "name": "胳膊R",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param165",
+          "Param167",
+          "Param174"
+        ]
+      },
+      {
+        "id": "PhysicsSetting42",
+        "name": "后发",
+        "inputs": [
+          "Param2",
+          "Param4",
+          "ParamAngleX",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param121",
+          "Param122",
+          "Param123"
+        ]
+      },
+      {
+        "id": "PhysicsSetting43",
+        "name": "后发y",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param124",
+          "Param125"
+        ]
+      },
+      {
+        "id": "PhysicsSetting44",
+        "name": "呆毛",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param100",
+          "Param101",
+          "Param102"
+        ]
+      },
+      {
+        "id": "PhysicsSetting45",
+        "name": "呆毛(2)",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param104",
+          "Param105",
+          "Param106"
+        ]
+      },
+      {
+        "id": "PhysicsSetting46",
+        "name": "erhuan",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param38"
+        ]
+      },
+      {
+        "id": "PhysicsSetting47",
+        "name": "fashi",
+        "inputs": [
+          "ParamAngleX",
+          "ParamAngleY",
+          "ParamAngleZ"
+        ],
+        "outputs": [
+          "Param",
+          "Param10"
+        ]
+      }
+    ]
+  },
+  "editable_sources": [],
+  "editable_model_sources": [],
+  "layered_art_sources": [],
+  "source_level_rerig_possible": false,
+  "runtime_parameter_drive_possible": true,
+  "already_rigged": true,
+  "decision": "drive-existing-moc3-parameters",
+  "reason": "Only compiled runtime model data is present; preserve its existing parameter-to-vertex rig.",
+  "official_references": [
+    "https://docs.live2d.com/en/cubism-editor-manual/file-type-and-extension/",
+    "https://docs.live2d.com/en/cubism-editor-manual/export-moc3-motion3-files/",
+    "https://docs.live2d.com/en/cubism-sdk-manual/model/",
+    "https://docs.live2d.com/en/cubism-sdk-manual/cubism-core-api-reference/"
+  ]
+}

@@ -74,7 +74,10 @@ def despill_resampled_edges(image: Image.Image) -> Image.Image:
     for y in range(image.height):
         for x in range(image.width):
             red, green, blue, alpha = pixels[x, y]
-            if 0 < alpha < 240 and green > max(red, blue) * 1.05 and green > 40:
+            # The character has no intentional green material. Include opaque
+            # boundary pixels: chroma matte can become opaque after resizing,
+            # which the previous alpha-only test missed.
+            if alpha > 0 and green > max(red, blue) + 3:
                 pixels[x, y] = (red, max(red, blue), blue, alpha)
     return image
 

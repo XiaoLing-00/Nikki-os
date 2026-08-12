@@ -13,7 +13,7 @@
     "greeting": {"row": 3, "frames": 4, "fps": 7, "loop": false, "next": "idle"},
     "happy": {"strip": "custom/love.png", "frames": 6, "fps": 8, "loop": false, "next": "idle"},
     "sad": {"row": 5, "frames": 8, "fps": 7, "loop": false, "next": "idle"},
-    "error": {"row": 5, "frames": 8, "fps": 7, "loop": false, "next": "idle"},
+    "error": {"strip": "custom/error.png", "frames": 6, "fps": 7, "loop": false, "next": "idle"},
     "listening": {"strip": "custom/listening.png", "frames": 6, "fps": 6, "loop": true},
     "thinking": {"row": 7, "frames": 6, "fps": 7, "loop": true},
     "visual_review": {"row": 8, "frames": 6, "fps": 7, "loop": true},

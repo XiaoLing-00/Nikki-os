@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from PyQt6.QtCore import QRectF, Qt, QTimer
-from PyQt6.QtGui import QImage, QPainter
+from PyQt6.QtGui import QColor, QImage, QPainter
 from PyQt6.QtWidgets import QWidget
 
 from animation.states import AnimationState
@@ -45,6 +45,22 @@ class SpriteRenderer(QWidget):
 
     def paintEvent(self, event) -> None:
         del event
+        painter = QPainter(self)
+        self._draw_current_frame(painter)
+
+    def render_current_frame(self, background: QColor | None = None) -> QImage:
+        """Render deterministically without grabbing a transparent native window."""
+        output = QImage(
+            self.size(),
+            QImage.Format.Format_ARGB32_Premultiplied,
+        )
+        output.fill(background or QColor(0, 0, 0, 0))
+        painter = QPainter(output)
+        self._draw_current_frame(painter)
+        painter.end()
+        return output
+
+    def _draw_current_frame(self, painter: QPainter) -> None:
         config = self._config()
         cell_w = int(self.manifest["cell_width"])
         cell_h = int(self.manifest["cell_height"])
@@ -59,7 +75,6 @@ class SpriteRenderer(QWidget):
         target_w = cell_w * scale
         target_h = cell_h * scale
         target = QRectF((self.width() - target_w) / 2, self.height() - target_h, target_w, target_h)
-        painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
         painter.drawImage(target, image, source)
 

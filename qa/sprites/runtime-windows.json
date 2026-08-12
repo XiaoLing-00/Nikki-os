@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "states": [
+    "idle",
+    "talking",
+    "thinking",
+    "listening",
+    "greeting",
+    "happy",
+    "comfort",
+    "sad",
+    "error",
+    "angry",
+    "visual_review",
+    "roam_left",
+    "roam_right",
+    "dragging",
+    "sleeping"
+  ],
+  "window_size": [
+    215,
+    330
+  ],
+  "green_dominant_pixels": {
+    "dark": 0,
+    "light": 0
+  },
+  "images": {
+    "dark": "qa\\sprites\\runtime-windows-dark.png",
+    "light": "qa\\sprites\\runtime-windows-light.png"
+  }
+}

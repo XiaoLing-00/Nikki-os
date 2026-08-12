@@ -14,13 +14,13 @@ STATE_FALLBACK = {
     AnimationState.HAPPY: ("love", "motion_excited"),
     AnimationState.COMFORT: ("wink", "motion_comfort"),
     AnimationState.SAD: ("cry", "motion_comfort"),
-    AnimationState.ERROR: ("awkward", "motion_idle"),
+    AnimationState.ERROR: ("awkward", "motion_error"),
     AnimationState.ANGRY: ("punch", "motion_excited"),
     AnimationState.VISUAL_REVIEW: ("dizzy", "motion_tilt_head"),
-    AnimationState.ROAM_LEFT: ("wink", "motion_idle"),
-    AnimationState.ROAM_RIGHT: ("wink", "motion_idle"),
+    AnimationState.ROAM_LEFT: ("wink", "motion_roam"),
+    AnimationState.ROAM_RIGHT: ("wink", "motion_roam"),
     AnimationState.DRAGGING: ("awkward", "motion_dragging"),
-    AnimationState.SLEEPING: ("wink", "motion_idle"),
+    AnimationState.SLEEPING: ("wink", "motion_sleep"),
 }
 
 

@@ -1,5 +1,15 @@
 {
   "ok": true,
+  "atlas": {
+    "ok": true,
+    "size": [
+      1536,
+      1872
+    ],
+    "cells": 72,
+    "boundary_green_spill_pixels": 0,
+    "scaled_boundary_green_spill_pixels": 0
+  },
   "states": {
     "talking": {
       "ok": true,
@@ -53,7 +63,9 @@
         true,
         true
       ],
-      "green_spill_pixels": 0
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
     },
     "listening": {
       "ok": true,
@@ -107,7 +119,9 @@
         true,
         true
       ],
-      "green_spill_pixels": 0
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
     },
     "comfort": {
       "ok": true,
@@ -161,7 +175,9 @@
         true,
         true
       ],
-      "green_spill_pixels": 0
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
     },
     "dragging": {
       "ok": true,
@@ -215,7 +231,9 @@
         true,
         true
       ],
-      "green_spill_pixels": 0
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
     },
     "angry": {
       "ok": true,
@@ -269,7 +287,9 @@
         true,
         true
       ],
-      "green_spill_pixels": 0
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
     },
     "love": {
       "ok": true,
@@ -323,7 +343,9 @@
         true,
         true
       ],
-      "green_spill_pixels": 0
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
     },
     "sleeping": {
       "ok": true,
@@ -377,7 +399,65 @@
         true,
         true
       ],
-      "green_spill_pixels": 0
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "error": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          34,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ],
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
     }
   }
 }

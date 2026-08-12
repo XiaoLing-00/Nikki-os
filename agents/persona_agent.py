@@ -25,7 +25,7 @@ SYSTEM_PROMPT = """
   "response": {
     "text": "面向用户的中文短句，控制在 80 字以内",
     "emotion": "wink|love|cry|awkward|dizzy|rose|punch|gentle|sad|angry",
-    "action": "motion_idle|motion_talk|motion_tilt_head|motion_wave|motion_comfort|motion_excited|motion_think|motion_listen|motion_shy"
+    "action": "motion_idle|motion_talk|motion_tilt_head|motion_wave|motion_comfort|motion_excited|motion_think|motion_listen|motion_dragging|motion_shy"
   },
   "memory_update": {
     "key_info": "值得长期保存的用户偏好或事实；没有则为空字符串",

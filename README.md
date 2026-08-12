@@ -93,7 +93,18 @@ SOULPET_REQUEST_TIMEOUT=45
 SOULPET_REQUEST_RETRIES=1
 ```
 
-详见 [隐私说明](PRIVACY.md)、[Live2D 能力边界](docs/live2d-limitations.md)和[双渲染器评估协议](docs/evaluation-protocol.md)。
+详见 [隐私说明](PRIVACY.md)、[Live2D 绑定审计](docs/live2d-rig-audit.md)、[Live2D 能力边界](docs/live2d-limitations.md)和[双渲染器评估协议](docs/evaluation-protocol.md)。
+
+模型绑定与渲染性能可以复现检查：
+
+```bash
+python scripts/audit_live2d_model.py
+python scripts/make_sprite_qa.py
+python scripts/render_sprite_qa.py --label macos
+python scripts/benchmark_renderers.py --duration-seconds 900
+```
+
+第一条通过实际 Cubism Core 运行时导出参数和物理链审计；中间两条检查原图、双线性放大与实际 Qt 渲染后的透明边缘，并在深浅背景输出全部 15 个状态；最后一条依次对序列帧和 Live2D 执行同样的 15 分钟动作脚本，记录进程树 CPU、RSS、启动时间和帧间隔。当前生产默认仍为序列帧，Live2D 保留为可选模式。
 
 ## 4. 接口协议
 
@@ -143,7 +154,7 @@ Persona Agent 与 UI、Memory、Observer 之间统一使用以下 JSON：
 | Observer | `agents/observer_agent.py` | 勤奋、休闲、深夜主动触发 |
 | Persona | `agents/persona_agent.py` | 人设提示词、结构化回复、记忆写入 |
 | UI | `ui/main_window.py` | 透明置顶窗口、气泡输入、右键菜单、后台线程 |
-| Live2D | `ui/live2d_widget.py` | QWebEngineView 与 HTML/JS 通信 |
+| Live2D | `ui/live2d_widget.py` | QWebEngineView 与 HTML/JS 通信、参数与帧统计桥接 |
 
 ## 6. 技术难点
 

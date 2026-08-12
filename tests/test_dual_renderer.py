@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from PyQt6.QtGui import QImage
+from PyQt6.QtGui import QColor, QImage
 
 from animation.action_mapper import ActionMapper
 from animation.states import AnimationState
@@ -19,7 +19,10 @@ def test_every_semantic_state_has_sprite_mapping() -> None:
     assert set(item.value for item in AnimationState) <= set(states)
 
 
-@pytest.mark.parametrize("state", ["talking", "listening", "comfort", "dragging", "angry", "happy", "sleeping"])
+@pytest.mark.parametrize(
+    "state",
+    ["talking", "listening", "comfort", "dragging", "angry", "happy", "sleeping", "error"],
+)
 def test_generated_strips_are_valid_rgba_six_frame_assets(state: str) -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     path = MANIFEST.parent / manifest["states"][state]["strip"]
@@ -27,6 +30,23 @@ def test_generated_strips_are_valid_rgba_six_frame_assets(state: str) -> None:
     assert not image.isNull()
     assert (image.width(), image.height()) == (192 * 6, 208)
     assert image.hasAlphaChannel()
+
+
+def test_error_and_sad_use_distinct_animation_assets() -> None:
+    states = json.loads(MANIFEST.read_text(encoding="utf-8"))["states"]
+    assert states["error"].get("strip")
+    assert states["error"] != states["sad"]
+
+
+def test_sprite_qa_rejects_translucent_opaque_and_scaled_green_edges() -> None:
+    report = json.loads((ROOT / "qa/sprites/custom-qa.json").read_text(encoding="utf-8"))
+    assert report["ok"] is True
+    assert report["atlas"]["boundary_green_spill_pixels"] == 0
+    assert report["atlas"]["scaled_boundary_green_spill_pixels"] == 0
+    for state in report["states"].values():
+        assert state["green_spill_pixels"] == 0
+        assert state["boundary_green_spill_pixels"] == 0
+        assert state["scaled_boundary_green_spill_pixels"] == 0
 
 
 def test_sprite_renderer_switches_between_atlas_and_custom_strip(qtbot) -> None:
@@ -37,6 +57,20 @@ def test_sprite_renderer_switches_between_atlas_and_custom_strip(qtbot) -> None:
     assert not renderer._custom_strip.isNull()
     renderer.play_state(AnimationState.IDLE, "wink", "motion_idle")
     assert renderer._custom_path is None
+
+
+def test_sprite_renderer_can_render_without_native_window_grab(qtbot) -> None:
+    renderer = SpriteRenderer(MANIFEST)
+    qtbot.addWidget(renderer)
+    renderer.resize(215, 330)
+    renderer.play_state(AnimationState.HAPPY, "love", "motion_excited")
+    renderer._timer.stop()
+
+    frame = renderer.render_current_frame(QColor(245, 245, 245))
+
+    assert not frame.isNull()
+    assert (frame.width(), frame.height()) == (215, 330)
+    assert frame.pixelColor(0, 0) == QColor(245, 245, 245)
 
 
 def test_action_mapper_never_leaks_unknown_model_values() -> None:

@@ -1,26 +1,43 @@
 {
-  "validated_at": "2026-08-12T23:40:00+08:00",
-  "platform": "Windows 11 Pro 10.0.26200.8875 AMD64",
+  "validated_at": "2026-08-13T01:50:32+08:00",
+  "platform": "Windows 11 10.0.26200 AMD64",
   "python": "3.12.10",
-  "commit": "08ff367a9ab637b0285fdb8e0fb3f2dd1d621d39",
+  "base_commit": "b797196b3e4e800ade83962e7e0fa92e198ae9ce",
   "checks": {
     "ruff": "pass",
-    "pytest": "34 passed",
+    "pytest": "40 passed",
     "doctor_source": "pass",
     "doctor_packaged_exit_code": 0,
     "microphone_input_devices": 11,
     "sprite_states_exercised": 15,
-    "sprite_screenshot": "qa/windows-sprite-smoke.png",
-    "sprite_screenshot_sha256": "28bace429ef73332da8d137a3c5c541bb5f1acc3e5dd8976debdaa7575b9979f",
-    "live2d_webchannel_ready": true,
-    "live2d_model_loaded": true,
+    "sprite_green_dominant_pixels_dark": 0,
+    "sprite_green_dominant_pixels_light": 0,
+    "sprite_runtime_dark": "qa/sprites/runtime-windows-dark.png",
+    "sprite_runtime_dark_sha256": "770c9b81ee75d6de20acc007f206883e5a347fac319c767e899ffa92c0c134cb",
+    "sprite_runtime_light": "qa/sprites/runtime-windows-light.png",
+    "sprite_runtime_light_sha256": "98838a441369b386201067a2aee968931a487d644e9820b92de453a344ca1550",
+    "live2d_parameter_count": 129,
+    "live2d_physics_settings": 47,
+    "live2d_source_level_rerig_possible": false,
+    "live2d_runtime_parameter_drive_possible": true,
     "packaged_sprite_alive_after_seconds": 8,
     "packaged_live2d_alive_after_seconds": 15
+  },
+  "renderer_benchmark": {
+    "duration_seconds_per_renderer": 900,
+    "recommendation": "sprite",
+    "sprite_mean_cpu_percent": 0.689,
+    "sprite_mean_rss_mib": 63.788,
+    "sprite_late_frame_ratio": 0.0,
+    "live2d_mean_cpu_percent": 62.116,
+    "live2d_mean_rss_mib": 897.61,
+    "live2d_late_frame_ratio": 0.013118175381060634,
+    "report": "qa/renderer-benchmark-windows.json"
   },
   "package": {
     "type": "PyInstaller onedir",
     "executable": "dist/NikkiOS/NikkiOS.exe",
-    "sha256": "678E98F888A178CC7D9D7A300BB90D2E39C0F2C451A420A115390D9CC144D5CD"
+    "sha256": "99a10ade7e76a8b97c44f6d3be4c7e7874a92533a8e0cc1eb2d9e0225ca6dbd0"
   },
   "notes": [
     "Cloud AI calls were not exercised because no API key was placed on the test host.",
