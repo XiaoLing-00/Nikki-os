@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PyQt6.QtCore import QEvent, QObject, Qt, QUrl, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QObject, Qt, QUrl, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QColor
 from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
@@ -97,6 +97,18 @@ class Live2DWidget(QWebEngineView):
 
     def set_idle_state(self, state: str) -> None:
         self._run_js(f"window.SoulPet && window.SoulPet.setIdleState({state!r});")
+
+    def set_parameter(self, parameter_id: str, value: float) -> None:
+        self._run_js(
+            "window.SoulPet && window.SoulPet.setParameter("
+            f"{parameter_id!r}, {float(value)});"
+        )
+
+    def get_parameters(self, callback) -> None:
+        self.page().runJavaScript(
+            "window.SoulPet ? window.SoulPet.getParameters() : []",
+            callback,
+        )
 
     def _run_js(self, script: str) -> None:
         self.page().runJavaScript(script)

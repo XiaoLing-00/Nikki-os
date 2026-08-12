@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import re
 import sqlite3
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+
+from memory.memory_trigger import contains_sensitive_information
 
 
 @dataclass
@@ -92,24 +95,69 @@ class LongMemory:
         key_info: str | None,
         sentiment: str = "neutral",
         source: str = "dialogue",
-    ) -> None:
-        if not key_info:
-            return
+    ) -> bool:
+        if not key_info or contains_sensitive_information(key_info):
+            return False
+        key_info = " ".join(key_info.strip().split())[:300]
         now = datetime.now().isoformat(timespec="seconds")
         with closing(self._connect()) as conn:
             with conn:
+                duplicate = conn.execute(
+                    "SELECT id FROM memories WHERE lower(key_info) = lower(?) LIMIT 1",
+                    (key_info,),
+                ).fetchone()
+                if duplicate:
+                    return False
                 conn.execute(
                     "INSERT INTO memories(key_info, sentiment, source, created_at) VALUES(?, ?, ?, ?)",
-                    (key_info.strip(), sentiment, source, now),
+                    (key_info, sentiment, source, now),
                 )
                 conn.execute(
                     """
                     INSERT INTO interaction_history(summary, sentiment, source, created_at)
                     VALUES(?, ?, ?, ?)
                     """,
-                    (key_info.strip(), sentiment, source, now),
+                    (key_info, sentiment, source, now),
                 )
                 self._increment_stat(conn, "affection", 2 if sentiment == "positive" else 1)
+        return True
+
+    def list_memories(self, limit: int = 500) -> list[dict[str, str | int]]:
+        with closing(self._connect()) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT id, key_info, sentiment, source, created_at FROM memories ORDER BY id DESC LIMIT ?",
+                (max(1, limit),),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def update_memory(self, memory_id: int, key_info: str, sentiment: str = "neutral") -> bool:
+        clean = " ".join(key_info.strip().split())[:300]
+        if not clean or contains_sensitive_information(clean):
+            return False
+        if sentiment not in {"positive", "neutral", "negative"}:
+            sentiment = "neutral"
+        with closing(self._connect()) as conn:
+            with conn:
+                cursor = conn.execute(
+                    "UPDATE memories SET key_info = ?, sentiment = ? WHERE id = ?",
+                    (clean, sentiment, memory_id),
+                )
+        return cursor.rowcount > 0
+
+    def delete_memory(self, memory_id: int) -> bool:
+        with closing(self._connect()) as conn:
+            with conn:
+                cursor = conn.execute("DELETE FROM memories WHERE id = ?", (memory_id,))
+        return cursor.rowcount > 0
+
+    def clear_memories(self) -> int:
+        with closing(self._connect()) as conn:
+            with conn:
+                count = int(conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0])
+                conn.execute("DELETE FROM memories")
+                conn.execute("DELETE FROM interaction_history")
+        return count
 
     def recent_memories(self, limit: int = 8) -> list[dict[str, str]]:
         with closing(self._connect()) as conn:
@@ -124,6 +172,35 @@ class LongMemory:
                 (limit,),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def relevant_memories(self, query: str, limit: int = 8) -> list[dict[str, str]]:
+        candidates = self.list_memories(limit=200)
+        terms = {
+            term.lower()
+            for term in re.findall(r"[A-Za-z0-9_]{2,}|[\u4e00-\u9fff]{2,}", query)
+        }
+        if not terms:
+            return [dict(item) for item in candidates[:limit]]
+
+        def score(item: dict[str, str | int]) -> tuple[int, int]:
+            text = str(item["key_info"]).lower()
+            matches = sum(1 for term in terms if term in text)
+            return matches, int(item["id"])
+
+        ranked = sorted(candidates, key=score, reverse=True)
+        relevant = [dict(item) for item in ranked if score(item)[0] > 0]
+        return relevant[:limit] or [dict(item) for item in candidates[: min(3, limit)]]
+
+    def prune_memories(self, max_count: int = 500) -> int:
+        max_count = max(20, max_count)
+        with closing(self._connect()) as conn:
+            with conn:
+                before = int(conn.execute("SELECT COUNT(*) FROM memories").fetchone()[0])
+                conn.execute(
+                    "DELETE FROM memories WHERE id NOT IN (SELECT id FROM memories ORDER BY id DESC LIMIT ?)",
+                    (max_count,),
+                )
+        return max(0, before - max_count)
 
     def profile(self) -> dict[str, str]:
         with closing(self._connect()) as conn:

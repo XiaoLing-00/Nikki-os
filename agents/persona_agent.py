@@ -7,7 +7,6 @@ from memory.memory_trigger import should_store_memory
 from memory.short_memory import ShortMemory
 from services.llm_service import LLMService
 
-
 SYSTEM_PROMPT = """
 你是桌面陪伴系统 SoulPet-OS 的本体 Agent，角色名叫苏暖暖。
 人设：单纯、善良、情绪化，说话自然带一点“哒、呀、唔”；讨厌数学，但会努力安慰用户。
@@ -26,7 +25,7 @@ SYSTEM_PROMPT = """
   "response": {
     "text": "面向用户的中文短句，控制在 80 字以内",
     "emotion": "wink|love|cry|awkward|dizzy|rose|punch|gentle|sad|angry",
-    "action": "motion_idle|motion_tilt_head|motion_wave|motion_comfort|motion_excited"
+    "action": "motion_idle|motion_talk|motion_tilt_head|motion_wave|motion_comfort|motion_excited|motion_think|motion_listen|motion_shy"
   },
   "memory_update": {
     "key_info": "值得长期保存的用户偏好或事实；没有则为空字符串",
@@ -48,7 +47,10 @@ class PersonaAgent:
         self.long_memory = long_memory
 
     def reply(self, user_text: str, context: dict, proactive: bool = False) -> dict:
-        memories = self.long_memory.recent_memories(limit=8)
+        memory_query = " ".join(
+            [user_text, str(context.get("topic", "")), str(context.get("app", ""))]
+        )
+        memories = self.long_memory.relevant_memories(memory_query, limit=8)
         profile = self.long_memory.profile()
         stats = self.long_memory.stats()
         interactions = self.long_memory.recent_interactions(limit=5)
@@ -77,7 +79,11 @@ class PersonaAgent:
         self.short_memory.add_assistant(result["response"]["text"])
 
         memory_update = result.get("memory_update", {})
-        if should_store_memory(memory_update):
+        do_not_remember = any(
+            phrase in user_text.lower()
+            for phrase in ("不要记住", "别记住", "本轮不要记", "do not remember", "don't remember")
+        )
+        if not do_not_remember and should_store_memory(memory_update):
             self.long_memory.add_memory(
                 memory_update.get("key_info"),
                 memory_update.get("sentiment", "neutral"),

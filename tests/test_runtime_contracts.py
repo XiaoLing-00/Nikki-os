@@ -8,10 +8,10 @@ from pathlib import Path
 
 from agents.observer_agent import ObserverAgent
 from agents.persona_agent import PersonaAgent
+from config.preferences import PreferencesStore
 from config.settings import Settings
 from memory.long_memory import LongMemory
 from ui.action_controller import ActionController
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,6 +26,11 @@ class FakeLongMemory:
 
 
 class RuntimeContractsTest(unittest.TestCase):
+    def _unmuted_preferences(self, tmpdir: str) -> PreferencesStore:
+        store = PreferencesStore(Path(tmpdir) / "preferences.json")
+        store.update(quiet_start=0, quiet_end=0)
+        return store
+
     def test_action_controller_maps_persona_emotions_to_existing_expressions(self) -> None:
         model = json.loads((ROOT / "assets/live2d/nikki/model3.json").read_text(encoding="utf-8"))
         available = {
@@ -59,12 +64,13 @@ class RuntimeContractsTest(unittest.TestCase):
     def test_observer_triggers_long_coding_after_threshold(self) -> None:
         settings = Settings(observer_interval_ms=60_000, coding_minutes_threshold=2)
         memory = FakeLongMemory()
-        observer = ObserverAgent(settings, memory)  # type: ignore[arg-type]
-        observer._triggered.add(f"late_night_{datetime.now().date()}")
-        observer._triggered.add(f"morning_{datetime.now().date()}")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            observer = ObserverAgent(settings, memory, self._unmuted_preferences(tmpdir))  # type: ignore[arg-type]
+            observer._triggered.add(f"late_night_{datetime.now().date()}")
+            observer._triggered.add(f"morning_{datetime.now().date()}")
 
-        self.assertIsNone(observer.evaluate({"app": "VS Code"}))
-        trigger = observer.evaluate({"app": "VS Code"})
+            self.assertIsNone(observer.evaluate({"app": "VS Code"}))
+            trigger = observer.evaluate({"app": "VS Code"})
 
         self.assertIsNotNone(trigger)
         self.assertEqual(trigger["reason"], "long_coding")
@@ -72,11 +78,12 @@ class RuntimeContractsTest(unittest.TestCase):
     def test_observer_triggers_high_place_reaction(self) -> None:
         settings = Settings()
         memory = FakeLongMemory()
-        observer = ObserverAgent(settings, memory)  # type: ignore[arg-type]
-        observer._triggered.add(f"late_night_{datetime.now().date()}")
-        observer._triggered.add(f"morning_{datetime.now().date()}")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            observer = ObserverAgent(settings, memory, self._unmuted_preferences(tmpdir))  # type: ignore[arg-type]
+            observer._triggered.add(f"late_night_{datetime.now().date()}")
+            observer._triggered.add(f"morning_{datetime.now().date()}")
 
-        trigger = observer.evaluate({"app": "Browser", "pet_window_y": 20})
+            trigger = observer.evaluate({"app": "Browser", "pet_window_y": 20})
 
         self.assertIsNotNone(trigger)
         self.assertEqual(trigger["reason"], "high_place")

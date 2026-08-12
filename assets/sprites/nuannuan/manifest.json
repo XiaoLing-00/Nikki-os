@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "atlas": "spritesheet.webp",
+  "columns": 8,
+  "rows": 9,
+  "cell_width": 192,
+  "cell_height": 208,
+  "default_fps": 8,
+  "states": {
+    "idle": {"row": 0, "frames": 6, "fps": 4, "loop": true},
+    "roam_right": {"row": 1, "frames": 8, "fps": 10, "loop": true},
+    "roam_left": {"row": 2, "frames": 8, "fps": 10, "loop": true},
+    "greeting": {"row": 3, "frames": 4, "fps": 7, "loop": false, "next": "idle"},
+    "happy": {"strip": "custom/love.png", "frames": 6, "fps": 8, "loop": false, "next": "idle"},
+    "sad": {"row": 5, "frames": 8, "fps": 7, "loop": false, "next": "idle"},
+    "error": {"row": 5, "frames": 8, "fps": 7, "loop": false, "next": "idle"},
+    "listening": {"strip": "custom/listening.png", "frames": 6, "fps": 6, "loop": true},
+    "thinking": {"row": 7, "frames": 6, "fps": 7, "loop": true},
+    "visual_review": {"row": 8, "frames": 6, "fps": 7, "loop": true},
+    "talking": {"strip": "custom/talking.png", "frames": 6, "fps": 8, "loop": true},
+    "comfort": {"strip": "custom/comfort.png", "frames": 6, "fps": 6, "loop": false, "next": "idle"},
+    "angry": {"strip": "custom/angry.png", "frames": 6, "fps": 9, "loop": false, "next": "idle"},
+    "dragging": {"strip": "custom/dragging.png", "frames": 6, "fps": 10, "loop": true},
+    "sleeping": {"strip": "custom/sleeping.png", "frames": 6, "fps": 3, "loop": true}
+  }
+}

@@ -128,13 +128,13 @@
     <div class="ribbon"></div>
   </div>
 
-  <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.3/dist/pixi.min.js"></script>
+  <script src="vendor/live2dcubismcore.min.js"></script>
+  <script src="vendor/pixi-7.4.3.min.js"></script>
   <script>
     window.global = window;
     window.process = window.process || { env: { NODE_ENV: "production" } };
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.5.0-beta/dist/cubism4.min.js"></script>
+  <script src="vendor/pixi-live2d-display-0.5.0-beta.min.js"></script>
   <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
   <script>
     const fallback = document.getElementById("fallback");
@@ -370,6 +370,24 @@
       } catch (error) {}
     }
 
+    function parameterSnapshot() {
+      try {
+        const core = model && model.internalModel && model.internalModel.coreModel;
+        const parameters = core && core.getModel && core.getModel().parameters;
+        if (!parameters) return [];
+        return Array.from(parameters.ids || []).map((id, index) => ({
+          id: String(id),
+          minimum: Number(parameters.minimumValues[index]),
+          maximum: Number(parameters.maximumValues[index]),
+          defaultValue: Number(parameters.defaultValues[index]),
+          value: Number(parameters.values[index])
+        }));
+      } catch (error) {
+        log(`parameter snapshot failed: ${error}`);
+        return [];
+      }
+    }
+
     function animateParams(frames, duration = 900) {
       if (!model) return;
       if (motionAnimation) cancelAnimationFrame(motionAnimation);
@@ -425,7 +443,10 @@
         }), 700),
         motion_shy: () => animateParams((phase, wave) => ({
           params: { ParamAngleY: -8 * phase, ParamAngleZ: 7 * wave, ParamMouthForm: 0.7 * phase }
-        }), 1200)
+        }), 1200),
+        motion_talk: () => animateParams((_phase, wave) => ({
+          params: { ParamMouthOpenY: 0.65 * Math.abs(wave), ParamMouthForm: 0.25, ParamAngleZ: 2 * wave }
+        }), 1500)
       };
       (variants[motionName] || variants.motion_tilt_head)();
       log(`simulated motion: ${motionName}`);
@@ -456,6 +477,20 @@
       },
       setPointerEnabled(enabled) {
         return Boolean(enabled);
+      },
+      setLookVector(x, y) {
+        const safeX = Math.max(-1, Math.min(1, Number(x) || 0));
+        const safeY = Math.max(-1, Math.min(1, Number(y) || 0));
+        setParam("ParamEyeBallX", safeX);
+        setParam("ParamEyeBallY", -safeY);
+        setParam("ParamAngleX", safeX * 16);
+        setParam("ParamAngleY", -safeY * 10);
+      },
+      setParameter(id, value) {
+        setParam(String(id), Number(value));
+      },
+      getParameters() {
+        return parameterSnapshot();
       },
       setIdleState(stateName) {
         const state = actionsConfig.states && actionsConfig.states[stateName];

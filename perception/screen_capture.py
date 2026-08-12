@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import platform
+import subprocess
 from pathlib import Path
 
 try:
@@ -14,6 +16,10 @@ except Exception:  # pragma: no cover - optional dependency
 
 
 def get_active_window_title() -> str:
+    if platform.system() == "Darwin":
+        return _run_osascript(
+            'tell application "System Events" to tell first application process whose frontmost is true to get name of front window'
+        )
     if gw is None:
         return ""
     try:
@@ -24,6 +30,10 @@ def get_active_window_title() -> str:
 
 
 def get_active_process_name() -> str:
+    if platform.system() == "Darwin":
+        return _run_osascript(
+            'tell application "System Events" to get name of first application process whose frontmost is true'
+        )
     if psutil is None:
         return ""
     try:
@@ -39,8 +49,8 @@ def get_active_process_name() -> str:
         return ""
 
 
-def classify_app(title: str) -> str:
-    lowered = title.lower()
+def classify_app(title: str, process_name: str = "") -> str:
+    lowered = f"{title} {process_name}".lower()
     if "visual studio code" in lowered or "vs code" in lowered or "code.exe" in lowered:
         return "VS Code"
     if "bilibili" in lowered or "哔哩哔哩" in lowered or "b站" in lowered:
@@ -52,6 +62,20 @@ def classify_app(title: str) -> str:
     if "powerpoint" in lowered:
         return "PowerPoint"
     return title.split(" - ")[-1].strip() if title else "Unknown"
+
+
+def _run_osascript(script: str) -> str:
+    try:
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+        return result.stdout.strip() if result.returncode == 0 else ""
+    except Exception:
+        return ""
 
 
 def capture_primary_screen(path: Path) -> Path | None:

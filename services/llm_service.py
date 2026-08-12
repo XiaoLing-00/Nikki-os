@@ -8,6 +8,7 @@ from typing import Any
 import requests
 
 from config.settings import Settings
+from services.response_contract import ResponseContractError, validate_response
 from utils.logger import get_logger
 
 
@@ -41,13 +42,22 @@ class LLMService:
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history or [])
         messages.append({"role": "user", "content": user_prompt})
-        try:
-            content = self._post_chat(self.settings.text_model, messages)
-            return self._extract_json(content)
-        except Exception as exc:
-            self.logger.exception("DashScope text call failed: %s", exc)
-            fallback["response"]["text"] = "呜，暖暖刚刚思考卡住了，但我还在晓灵身边呀。"
-            return fallback
+        last_error: Exception | None = None
+        for attempt in range(self.settings.request_retries + 1):
+            try:
+                content = self._post_chat(self.settings.text_model, messages, json_mode=True)
+                return validate_response(self._extract_json(content))
+            except (requests.RequestException, KeyError, ValueError, ResponseContractError) as exc:
+                last_error = exc
+                self.logger.warning(
+                    "DashScope text attempt %s/%s failed: %s",
+                    attempt + 1,
+                    self.settings.request_retries + 1,
+                    type(exc).__name__,
+                )
+        self.logger.error("DashScope text call exhausted retries: %s", last_error)
+        fallback["response"]["text"] = "呜，暖暖刚刚思考卡住了，但我还在晓灵身边呀。"
+        return fallback
 
     def describe_image(self, image_path: Path, prompt: str) -> str:
         if not self.available:
@@ -71,19 +81,22 @@ class LLMService:
             self.logger.exception("DashScope vision call failed: %s", exc)
             return "视觉识别失败，暖暖只看到了一个模糊的屏幕印象。"
 
-    def _post_chat(self, model: str, messages: list[dict]) -> str:
+    def _post_chat(self, model: str, messages: list[dict], json_mode: bool = False) -> str:
         url = f"{self.settings.dashscope_base_url}/chat/completions"
+        body: dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "temperature": 0.75,
+        }
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
         response = requests.post(
             url,
             headers={
                 "Authorization": f"Bearer {self.settings.dashscope_api_key}",
                 "Content-Type": "application/json",
             },
-            json={
-                "model": model,
-                "messages": messages,
-                "temperature": 0.75,
-            },
+            json=body,
             timeout=self.settings.request_timeout,
         )
         response.raise_for_status()

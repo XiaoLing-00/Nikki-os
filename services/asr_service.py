@@ -125,7 +125,6 @@ class ASRService:
 
         chunk = 1024
         channels = 1
-        sample_width = 2
         sample_rate = self.settings.asr_sample_rate
         frame_count = int(sample_rate / chunk * self.settings.asr_record_seconds)
         audio = pyaudio.PyAudio()

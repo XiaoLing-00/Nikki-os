@@ -4,4 +4,16 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.venv/
+*.egg-info/
+build/
+dist/
+data/preferences.json
+data/metrics.jsonl
+assets/sprites/nuannuan/raw/
+assets/sprites/nuannuan/frames/
+qa/sprites/*-preview.gif
+qa/sprites/v2-raw-contact-sheet.jpg
+qa/sprites/*-processing.json
+qa/sprites/*-despill.json
 .

@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
+from config.preferences import PreferencesStore
 from config.settings import Settings
 from perception.screen_capture import (
     capture_primary_screen,
@@ -15,30 +16,68 @@ from services.llm_service import LLMService
 
 
 class ContextBuilder:
-    def __init__(self, settings: Settings, llm_service: LLMService | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        llm_service: LLMService | None = None,
+        preferences: PreferencesStore | None = None,
+    ) -> None:
         self.settings = settings
         self.llm_service = llm_service
+        self.preferences = preferences or PreferencesStore()
 
     def build_low_frequency_context(self) -> dict:
         title = get_active_window_title()
         process_name = get_active_process_name()
-        app = classify_app(title)
+        app = classify_app(title, process_name)
+        preferences = self.preferences.load()
+        excluded = any(
+            item.lower() in f"{app} {title} {process_name}".lower()
+            for item in preferences.excluded_apps
+            if item.strip()
+        )
+        if preferences.perception_mode == "off":
+            app, title, process_name = "Hidden", "", ""
+        elif excluded:
+            app, title, process_name = "Sensitive", "", ""
+        elif preferences.perception_mode == "app_only":
+            title = ""
         return {
             "app": app,
             "process_name": process_name,
             "window_title": title,
             "topic": self._topic_from_title(title),
             "user_status": self._status_from_app(app, process_name),
-            "perception_mode": "window_title",
+            "perception_mode": preferences.perception_mode,
+            "redacted": excluded,
             "timestamp": datetime.now().isoformat(timespec="seconds"),
         }
 
-    def build_visual_context(self) -> dict:
+    def capture_for_preview(self) -> Path | None:
         context = self.build_low_frequency_context()
+        if not self.preferences.load().vision_enabled or context.get("redacted"):
+            return None
         handle = NamedTemporaryFile(prefix="soulpet_screen_", suffix=".png", delete=False)
         image_path = Path(handle.name)
         handle.close()
-        image_path = capture_primary_screen(image_path)
+        return capture_primary_screen(image_path)
+
+    def build_visual_context(self, approved_image_path: Path | None = None) -> dict:
+        context = self.build_low_frequency_context()
+        if not self.preferences.load().vision_enabled:
+            context["perception_mode"] = "vision_disabled"
+            context["vision_summary"] = "用户尚未在隐私设置中启用截图分析。"
+            return context
+        if context.get("redacted"):
+            context["perception_mode"] = "vision_blocked_sensitive_app"
+            context["vision_summary"] = "当前应用位于敏感应用排除名单，未进行截图。"
+            return context
+        image_path = approved_image_path
+        if image_path is None:
+            handle = NamedTemporaryFile(prefix="soulpet_screen_", suffix=".png", delete=False)
+            image_path = Path(handle.name)
+            handle.close()
+            image_path = capture_primary_screen(image_path)
         context["perception_mode"] = "vision"
         context["screenshot"] = "temporary" if image_path else ""
 
