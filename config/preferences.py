@@ -24,6 +24,9 @@ class UserPreferences:
     quiet_end: int = 7
     excluded_apps: tuple[str, ...] = ("1Password", "KeePass", "Bitwarden", "银行", "支付")
     remember_window_position: bool = True
+    speech_mode: str = "edge"
+    speech_voice: str = "zh-CN-XiaoxiaoNeural"
+    speech_rate: int = 0
     window_x: int | None = None
     window_y: int | None = None
     auto_start: bool = False
@@ -42,11 +45,25 @@ class PreferencesStore:
             clean = {key: value for key, value in payload.items() if key in allowed}
             if isinstance(clean.get("excluded_apps"), list):
                 clean["excluded_apps"] = tuple(str(item) for item in clean["excluded_apps"])
+            # v0.2 previews called the paid DashScope route "auto". Migrate it
+            # to the free Edge neural route without discarding other settings.
+            if clean.get("speech_mode") == "auto":
+                clean["speech_mode"] = "edge"
             result = UserPreferences(**clean)
             if result.renderer_backend not in {"sprite", "live2d"}:
                 raise ValueError("invalid renderer_backend")
             if result.perception_mode not in {"off", "app_only", "window_title"}:
                 raise ValueError("invalid perception_mode")
+            if result.speech_mode not in {"edge", "system", "off"}:
+                raise ValueError("invalid speech_mode")
+            if result.speech_voice not in {
+                "zh-CN-XiaoxiaoNeural",
+                "zh-CN-XiaoyiNeural",
+                "zh-CN-YunxiNeural",
+            }:
+                raise ValueError("invalid speech_voice")
+            if not -20 <= result.speech_rate <= 30:
+                raise ValueError("invalid speech_rate")
             return result
         except Exception:
             return UserPreferences()

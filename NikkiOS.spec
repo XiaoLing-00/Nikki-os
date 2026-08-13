@@ -9,13 +9,15 @@ datas = [
     (str(root / ".env.example"), "."),
 ]
 datas += collect_data_files("dashscope")
+datas += collect_data_files("edge_tts")
+datas += collect_data_files("qtawesome")
 
 a = Analysis(
     [str(root / "main.py")],
     pathex=[str(root)],
     binaries=[],
     datas=datas,
-    hiddenimports=["PyQt6.QtWebEngineWidgets", "PyQt6.QtWebChannel", "pyaudio", "pygetwindow"],
+    hiddenimports=["PyQt6.QtWebEngineWidgets", "PyQt6.QtWebChannel", "PyQt6.QtMultimedia", "PyQt6.QtTextToSpeech", "edge_tts", "qtawesome", "qtpy", "pyaudio", "pygetwindow"],
     hookspath=[],
     runtime_hooks=[],
     excludes=[],

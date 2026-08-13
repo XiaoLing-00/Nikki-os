@@ -1,11 +1,16 @@
-# Third-party and asset notices
+# Third-party notices
 
-This repository contains third-party runtime libraries and character assets. Their presence does not relicense them.
+Nikki OS uses [`edge-tts`](https://github.com/rany2/edge-tts) to access the
+Microsoft Edge online text-to-speech service without an API key. `edge-tts`
+7.2.8 is licensed under LGPL-3.0, except for its `srt_composer.py` component,
+which is MIT licensed. Its source code and full license text are available in
+the linked upstream repository and in the installed Python package.
 
-- Cubism Core: `assets/live2d/vendor/live2dcubismcore.min.js`, governed by the Live2D Proprietary Software License.
-- PixiJS 7.4.3: `assets/live2d/vendor/pixi-7.4.3.min.js`, MIT License.
-- pixi-live2d-display 0.5.0-beta: `assets/live2d/vendor/pixi-live2d-display-0.5.0-beta.min.js`, MIT License.
-- Live2D model files under `assets/live2d/nikki`: upstream-supplied binary model. No editable `.cmo3`, `.can3`, PSD, or parameter-definition source was found in the repository. Redistribution rights must be confirmed by the project owner before a public binary release.
-- Sprite source under `assets/sprites/nuannuan`: derived from the user-provided Hatch export; generation request and source validation records are included next to the manifest. Confirm character-art redistribution rights before a public binary release.
+The online service is network-dependent and has no availability guarantee from
+this project. Nikki OS automatically falls back to the operating system's local
+text-to-speech engine when online synthesis is unavailable.
 
-The upstream repository currently provides no top-level software license. This change therefore does not add a software license or claim rights not granted by the owner. A maintainer should select a license before accepting outside redistribution or packaging.
+Nikki OS uses [`QtAwesome`](https://github.com/spyder-ide/qtawesome) for its
+cross-platform interface icons. QtAwesome is MIT licensed. Its bundled icon
+fonts retain their upstream licenses; the complete notices and license files
+are distributed inside the installed `qtawesome` package.

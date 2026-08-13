@@ -4,11 +4,13 @@ import json
 from pathlib import Path
 
 import pytest
+from PIL import Image
 from PyQt6.QtGui import QColor, QImage
 
 from animation.action_mapper import ActionMapper
 from animation.states import AnimationState
 from renderers.sprite_renderer import SpriteRenderer
+from scripts.process_custom_strip import process
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "assets" / "sprites" / "nuannuan" / "manifest.json"
@@ -59,6 +61,15 @@ def test_sprite_renderer_switches_between_atlas_and_custom_strip(qtbot) -> None:
     assert renderer._custom_path is None
 
 
+def test_sprite_renderer_implements_drag_compatibility_api(qtbot) -> None:
+    renderer = SpriteRenderer(MANIFEST)
+    qtbot.addWidget(renderer)
+
+    renderer.set_pointer_enabled(False)
+    renderer.refresh_viewport()
+    renderer.set_pointer_enabled(True)
+
+
 def test_sprite_renderer_can_render_without_native_window_grab(qtbot) -> None:
     renderer = SpriteRenderer(MANIFEST)
     qtbot.addWidget(renderer)
@@ -71,6 +82,66 @@ def test_sprite_renderer_can_render_without_native_window_grab(qtbot) -> None:
     assert not frame.isNull()
     assert (frame.width(), frame.height()) == (215, 330)
     assert frame.pixelColor(0, 0) == QColor(245, 245, 245)
+
+
+def test_soft_outline_only_reduces_dark_transparent_boundary() -> None:
+    source = QImage(9, 9, QImage.Format.Format_RGBA8888)
+    source.fill(QColor(0, 0, 0, 0))
+    for y in range(2, 7):
+        for x in range(2, 7):
+            source.setPixelColor(x, y, QColor(42, 30, 38, 255))
+    for y in range(3, 6):
+        for x in range(3, 6):
+            source.setPixelColor(x, y, QColor(246, 150, 170, 255))
+    source.setPixelColor(4, 4, QColor(42, 30, 38, 255))
+
+    result = SpriteRenderer._soften_outer_outline(source)
+
+    assert result.pixelColor(2, 2).lightness() > source.pixelColor(2, 2).lightness()
+    assert result.pixelColor(2, 2).alpha() == 255
+    assert result.pixelColor(4, 4) == QColor(42, 30, 38, 255)
+    assert result.pixelColor(0, 0) == QColor(0, 0, 0, 0)
+
+
+def test_dragging_state_has_extra_safe_area(qtbot) -> None:
+    renderer = SpriteRenderer(MANIFEST)
+    qtbot.addWidget(renderer)
+    renderer.resize(215, 330)
+    renderer.play_state(AnimationState.DRAGGING, "awkward", "motion_dragging")
+    renderer._timer.stop()
+
+    frame = renderer.render_current_frame()
+    alpha = frame.createAlphaMask()
+    occupied = [
+        (x, y)
+        for y in range(frame.height())
+        for x in range(frame.width())
+        if alpha.pixelIndex(x, y)
+    ]
+
+    assert occupied
+    assert min(x for x, _ in occupied) >= 16
+    assert max(x for x, _ in occupied) <= frame.width() - 17
+    assert min(y for _, y in occupied) >= 7
+    assert max(y for _, y in occupied) <= frame.height() - 8
+
+
+def test_separated_custom_strip_does_not_cut_silhouette_edges(tmp_path) -> None:
+    source = Image.new("RGB", (120, 40), (0, 255, 0))
+    pixels = source.load()
+    for left, right in ((5, 35), (45, 75), (85, 115)):
+        for y in range(5, 35):
+            for x in range(left, right):
+                pixels[x, y] = (255, 120, 160)
+    source_path = tmp_path / "source.png"
+    output_path = tmp_path / "strip.png"
+    source.save(source_path)
+
+    report = process(source_path, output_path, tmp_path / "frames", 3)
+
+    assert all(frame["segmentation"] == "separated-run" for frame in report["frames"])
+    assert all(frame["seam_guard_px"] == 0 for frame in report["frames"])
+    assert all(frame["source_bbox"] == (0, 5, 30, 35) for frame in report["frames"])
 
 
 def test_action_mapper_never_leaks_unknown_model_values() -> None:

@@ -30,6 +30,7 @@ def main() -> int:
     from perception.context_builder import ContextBuilder
     from services.asr_service import ASRService
     from services.llm_service import LLMService
+    from services.tts_service import TTSService
     from ui.main_window import MainWindow
 
     QApplication.setHighDpiScaleFactorRoundingPolicy(
@@ -45,8 +46,17 @@ def main() -> int:
     observer_agent = ObserverAgent(settings, long_memory, preferences)
     persona_agent = PersonaAgent(llm_service, short_memory, long_memory)
     asr_service = ASRService(settings)
+    tts_service = TTSService(settings, preferences)
 
-    window = MainWindow(settings, context_builder, observer_agent, persona_agent, asr_service, preferences)
+    window = MainWindow(
+        settings,
+        context_builder,
+        observer_agent,
+        persona_agent,
+        asr_service,
+        preferences,
+        tts_service,
+    )
     window.show()
     return app.exec()
 

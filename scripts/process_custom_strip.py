@@ -97,7 +97,8 @@ def process(source: Path, output_strip: Path, frames_dir: Path, frame_count: int
             if x - start >= 8:
                 runs.append((start, x))
             start = None
-    if len(runs) != frame_count:
+    detected_separated_poses = len(runs) == frame_count
+    if not detected_separated_poses:
         runs = [
             (round(index * image.width / frame_count), round((index + 1) * image.width / frame_count))
             for index in range(frame_count)
@@ -108,13 +109,16 @@ def process(source: Path, output_strip: Path, frames_dir: Path, frame_count: int
         left, right = runs[index]
         slot = keyed.crop((left, 0, right, image.height))
         slot = remove_neighbor_fragments(slot)
-        # Generative six-panel sheets can overlap a few pixels across seams.
-        # Clear the seam guard band deterministically before fitting the frame.
-        guard = max(2, round(slot.width * 0.07))
-        pixels = slot.load()
-        for y in range(slot.height):
-            for x in list(range(guard)) + list(range(slot.width - guard, slot.width)):
-                pixels[x, y] = (0, 0, 0, 0)
+        # A detected run already starts and ends at the character silhouette.
+        # Clearing a guard band there amputates wide hair, sleeves, or arms.
+        # Keep the guard only for equal-width fallback panels, where poses may
+        # genuinely overlap a generated seam.
+        guard = 0 if detected_separated_poses else max(2, round(slot.width * 0.07))
+        if guard:
+            pixels = slot.load()
+            for y in range(slot.height):
+                for x in list(range(guard)) + list(range(slot.width - guard, slot.width)):
+                    pixels[x, y] = (0, 0, 0, 0)
         bbox = slot.getchannel("A").getbbox()
         if not bbox:
             raise RuntimeError(f"frame {index} is empty")
@@ -128,7 +132,16 @@ def process(source: Path, output_strip: Path, frames_dir: Path, frame_count: int
         y = CELL_SIZE[1] - 5 - sprite.height
         cell.alpha_composite(sprite, (x, y))
         cells.append(cell)
-        report.append({"frame": index, "source_bbox": bbox, "size": size, "target": [x, y]})
+        report.append(
+            {
+                "frame": index,
+                "source_bbox": bbox,
+                "size": size,
+                "target": [x, y],
+                "segmentation": "separated-run" if detected_separated_poses else "equal-width-fallback",
+                "seam_guard_px": guard,
+            }
+        )
 
     frames_dir.mkdir(parents=True, exist_ok=True)
     for index, cell in enumerate(cells):

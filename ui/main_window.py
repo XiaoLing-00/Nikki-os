@@ -5,11 +5,13 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 
-from PyQt6.QtCore import QObject, QPoint, QRect, QRunnable, Qt, QThreadPool, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QCursor, QPixmap
+import qtawesome as qta
+from PyQt6.QtCore import QObject, QPoint, QRect, QRunnable, QSize, Qt, QThreadPool, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor, QCursor, QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
+    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -32,6 +34,8 @@ from config.settings import Settings
 from perception.context_builder import ContextBuilder
 from renderers.factory import create_renderer
 from services.asr_service import ASRService
+from services.tts_service import TTSService
+from ui.companion_menu import CompanionMenu
 from ui.live2d_debug_dialog import Live2DParameterDialog
 from ui.settings_dialog import MemoryDialog, SettingsDialog
 from utils.metrics import record_metric
@@ -74,6 +78,7 @@ class AgentWorker(QRunnable):
                     "action": "motion_idle",
                 }
             }
+        result["_reply_meta"] = {"proactive": self.task.proactive}
         self.signals.finished.emit(result)
         record_metric(
             "agent_reply",
@@ -113,6 +118,7 @@ class VisualAgentWorker(QRunnable):
                     "action": "motion_idle",
                 }
             }
+        result["_reply_meta"] = {"proactive": self.proactive}
         self.signals.finished.emit(result)
 
 
@@ -127,6 +133,18 @@ class ASRTranscribeWorker(QRunnable):
         self.signals.finished.emit({"text": text})
 
 
+class TTSWorker(QRunnable):
+    def __init__(self, tts_service: TTSService, text: str) -> None:
+        super().__init__()
+        self.tts_service = tts_service
+        self.text = text
+        self.signals = WorkerSignals()
+
+    def run(self) -> None:
+        path = self.tts_service.synthesize_online(self.text)
+        self.signals.finished.emit({"audio_path": str(path) if path else ""})
+
+
 class MainWindow(QWidget):
     def __init__(
         self,
@@ -136,6 +154,7 @@ class MainWindow(QWidget):
         persona_agent: PersonaAgent,
         asr_service: ASRService,
         preferences: PreferencesStore | None = None,
+        tts_service: TTSService | None = None,
     ) -> None:
         super().__init__()
         self.settings = settings
@@ -144,6 +163,7 @@ class MainWindow(QWidget):
         self.persona_agent = persona_agent
         self.asr_service = asr_service
         self.preferences = preferences or PreferencesStore()
+        self.tts_service = tts_service or TTSService(settings, self.preferences, self)
         self.actions = ActionMapper()
         self.animation = AnimationStateMachine(self)
         self.thread_pool = QThreadPool.globalInstance()
@@ -156,6 +176,11 @@ class MainWindow(QWidget):
         self.voice_key_active = False
         self.roam_direction = -1
         self._last_proactive_reason: str | None = None
+        self._tts_request_id = 0
+        self._pending_user_text: str | None = None
+        self._active_task_proactive = False
+        self._last_user_reply_at: datetime | None = None
+        self._companion_menu: CompanionMenu | None = None
 
         self._setup_window()
         self._setup_ui()
@@ -198,12 +223,13 @@ class MainWindow(QWidget):
 
         self.bubble = QFrame(self)
         self.bubble.setObjectName("bubble")
-        self.bubble.setGeometry(22, 18, 386, 132)
+        self.bubble.setGeometry(24, 18, 382, 144)
         self.bubble.hide()
+        self._add_shadow(self.bubble, blur=24, y_offset=6, alpha=44)
 
         layout = QVBoxLayout(self.bubble)
-        layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(8)
+        layout.setContentsMargins(16, 14, 14, 14)
+        layout.setSpacing(10)
 
         self.speech_label = QLabel("暖暖在这里陪你呀。")
         self.speech_label.setWordWrap(True)
@@ -222,51 +248,114 @@ class MainWindow(QWidget):
         self.voice_button = QPushButton("语音")
         self.voice_button.setObjectName("voiceButton")
         self.voice_button.setToolTip("语音输入")
+        self.voice_button.setAccessibleName("语音输入")
+        self.voice_button.setText("")
+        self.voice_button.setIcon(qta.icon("fa6s.microphone", color="#ffffff"))
+        self.voice_button.setIconSize(QSize(15, 15))
+        self.voice_button.setFixedSize(38, 38)
         self.voice_button.clicked.connect(self._toggle_voice_input)
         input_row.addWidget(self.voice_button)
 
-        self.say_button = QPushButton("发送")
+        self.say_button = QPushButton()
+        self.say_button.setObjectName("sayButton")
+        self.say_button.setToolTip("发送消息")
+        self.say_button.setAccessibleName("发送消息")
+        self.say_button.setIcon(qta.icon("fa6s.paper-plane", color="#ffffff"))
+        self.say_button.setIconSize(QSize(15, 15))
+        self.say_button.setFixedSize(38, 38)
         self.say_button.clicked.connect(self._submit_user_text)
         input_row.addWidget(self.say_button)
         layout.addLayout(input_row)
 
+        self.hover_prompt = QFrame(self)
+        self.hover_prompt.setObjectName("hoverPrompt")
+        self.hover_prompt.setGeometry(123, 84, 184, 48)
+        self.hover_prompt.hide()
+        self._add_shadow(self.hover_prompt, blur=18, y_offset=5, alpha=40)
+        hover_layout = QHBoxLayout(self.hover_prompt)
+        hover_layout.setContentsMargins(8, 2, 2, 2)
+        hover_layout.setSpacing(0)
+        self.hover_text_button = QPushButton("和暖暖说话")
+        self.hover_text_button.setObjectName("hoverTextButton")
+        self.hover_text_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.hover_text_button.setAccessibleName("打开暖暖聊天框")
+        self.hover_text_button.clicked.connect(self._open_chat)
+        hover_layout.addWidget(self.hover_text_button, 1)
+        self.hover_chat_button = QPushButton()
+        self.hover_chat_button.setObjectName("hoverChatButton")
+        self.hover_chat_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.hover_chat_button.setAccessibleName("打开暖暖聊天框")
+        self.hover_chat_button.setIcon(qta.icon("mdi6.comment-processing-outline", color="#ffffff"))
+        self.hover_chat_button.setIconSize(QSize(19, 19))
+        self.hover_chat_button.setFixedSize(44, 44)
+        self.hover_chat_button.clicked.connect(self._open_chat)
+        hover_layout.addWidget(self.hover_chat_button)
+
         self.setStyleSheet(
             """
             MainWindow { background: transparent; border: 0; }
-            QWidget { font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif; }
+            QWidget { font-family: 'PingFang SC', 'Microsoft YaHei UI', 'Segoe UI', sans-serif; }
             #bubble {
-                background: rgba(255, 250, 253, 236);
-                border: 1px solid rgba(255, 170, 204, 180);
-                border-radius: 8px;
+                background: rgba(255, 252, 254, 246);
+                border: 1px solid rgba(235, 153, 184, 155);
+                border-radius: 18px;
             }
             #speech {
-                color: #4a2433;
+                color: #542c3b;
                 font-size: 14px;
                 line-height: 1.4;
                 min-height: 38px;
             }
             QLineEdit {
-                min-height: 34px;
-                border: 1px solid rgba(233, 136, 177, 150);
-                border-radius: 7px;
-                padding: 0 10px;
-                color: #4a2433;
-                background: rgba(255, 255, 255, 245);
+                min-height: 36px;
+                border: 1px solid rgba(231, 160, 189, 190);
+                border-radius: 12px;
+                padding: 0 12px;
+                color: #542c3b;
+                background: rgba(255, 255, 255, 248);
             }
-            QPushButton {
-                min-height: 30px;
-                min-width: 54px;
-                border: 0;
-                border-radius: 7px;
+            QLineEdit:focus { border: 1px solid #eb6a9d; }
+            #voiceButton, #sayButton {
+                border: none;
+                border-radius: 19px;
                 color: white;
-                background: #e85f98;
+                background: #eb5d95;
             }
-            QPushButton:hover { background: #d94f88; }
-            QPushButton:disabled { background: rgba(168, 130, 150, 150); }
-            #voiceButton { background: #7b8fd6; }
-            #voiceButton:hover { background: #6d80c8; }
+            #voiceButton { background: #8a98d9; }
+            #voiceButton:hover { background: #7888cf; }
+            #sayButton:hover { background: #df4f88; }
+            #voiceButton:disabled, #sayButton:disabled { background: rgba(174, 151, 163, 175); }
+            #hoverPrompt {
+                background: rgba(255, 250, 252, 246);
+                border: 1px solid rgba(246, 190, 211, 120);
+                border-radius: 24px;
+            }
+            #hoverTextButton {
+                border: none;
+                background: transparent;
+                color: #713548;
+                font-size: 14px;
+                font-weight: 400;
+                text-align: center;
+                padding: 0 5px 0 9px;
+            }
+            #hoverTextButton:hover { color: #d94f88; }
+            #hoverChatButton {
+                border: none;
+                border-radius: 22px;
+                background: #eb5d95;
+            }
+            #hoverChatButton:hover { background: #df4f88; }
             """
         )
+
+    @staticmethod
+    def _add_shadow(widget: QWidget, blur: int, y_offset: int, alpha: int) -> None:
+        shadow = QGraphicsDropShadowEffect(widget)
+        shadow.setBlurRadius(blur)
+        shadow.setOffset(0, y_offset)
+        shadow.setColor(QColor(83, 44, 61, alpha))
+        widget.setGraphicsEffect(shadow)
 
     def resizeEvent(self, event) -> None:
         if hasattr(self, "live2d"):
@@ -330,7 +419,7 @@ class MainWindow(QWidget):
 
         self.bubble_timer = QTimer(self)
         self.bubble_timer.setSingleShot(True)
-        self.bubble_timer.timeout.connect(self.bubble.hide)
+        self.bubble_timer.timeout.connect(self._hide_bubble)
 
         self.idle_state_timer = QTimer(self)
         self.idle_state_timer.timeout.connect(self._apply_time_idle_state)
@@ -347,6 +436,10 @@ class MainWindow(QWidget):
         self.voice_limit_timer = QTimer(self)
         self.voice_limit_timer.setSingleShot(True)
         self.voice_limit_timer.timeout.connect(self._stop_voice_input)
+
+        self.reply_wait_timer = QTimer(self)
+        self.reply_wait_timer.setSingleShot(True)
+        self.reply_wait_timer.timeout.connect(self._show_slow_reply)
 
         self.gaze_timer = QTimer(self)
         self.gaze_timer.timeout.connect(self._update_gaze)
@@ -375,18 +468,24 @@ class MainWindow(QWidget):
         self.tray.show()
 
     def enterEvent(self, event) -> None:
-        self.hovered = True
-        self._show_bubble()
-        self.setFocus(Qt.FocusReason.MouseFocusReason)
+        self._update_hover_state(event.position().toPoint())
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         self.hovered = False
-        if not self.input_line.hasFocus():
+        self.hover_prompt.hide()
+        # Do not replace the listening/thinking/reply display deadline with
+        # the short hover-dismiss timeout when the pointer leaves the pet.
+        if not self.input_line.hasFocus() and not self.busy and not self.bubble_timer.isActive():
             self.bubble_timer.start(1800)
         super().leaveEvent(event)
 
     def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Escape and self.bubble.isVisible() and not self.busy:
+            self._hide_bubble()
+            self.setFocus(Qt.FocusReason.OtherFocusReason)
+            event.accept()
+            return
         if (
             event.key() == Qt.Key.Key_Space
             and self.hovered
@@ -410,14 +509,11 @@ class MainWindow(QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
             self.press_pos = event.globalPosition().toPoint()
             self.drag_offset = self.press_pos - self.frameGeometry().topLeft()
-        elif event.button() == Qt.MouseButton.RightButton:
-            if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                self._show_menu(event.globalPosition().toPoint())
-            else:
-                self._visual_refresh()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
+        if not event.buttons():
+            self._update_hover_state(event.position().toPoint())
         if (
             event.buttons() & Qt.MouseButton.LeftButton
             and self.press_pos
@@ -430,14 +526,44 @@ class MainWindow(QWidget):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
+        clicked_pet = (
+            event.button() == Qt.MouseButton.LeftButton
+            and self.press_pos is not None
+            and not self.dragging
+            and (event.globalPosition().toPoint() - self.press_pos).manhattanLength() < 8
+            and self._pet_hit_rect().contains(event.position().toPoint())
+        )
         self.drag_offset = None
         self.press_pos = None
         if self.dragging:
             self.drag_restore_timer.start(140)
+        elif clicked_pet:
+            self._open_chat()
         super().mouseReleaseEvent(event)
+
+    @staticmethod
+    def _pet_hit_rect() -> QRect:
+        return QRect(16, 166, 398, 494)
+
+    def _update_hover_state(self, position: QPoint) -> None:
+        self.hovered = self._pet_hit_rect().contains(position)
+        if self.hovered and not self.busy and not self.dragging and not self.bubble.isVisible():
+            self._show_hover_prompt()
+        elif not self.hovered:
+            self.hover_prompt.hide()
+
+    def _show_hover_prompt(self) -> None:
+        self.hover_prompt.show()
+        self.hover_prompt.raise_()
+
+    def _open_chat(self) -> None:
+        if self.dragging:
+            return
+        self._show_bubble()
 
     def _begin_drag(self) -> None:
         self.dragging = True
+        self.hover_prompt.hide()
         self.live2d.set_pointer_enabled(False)
         self.animation.request(
             AnimationState.DRAGGING,
@@ -457,52 +583,36 @@ class MainWindow(QWidget):
         self.animation.release(AnimationState.DRAGGING)
 
     def contextMenuEvent(self, event) -> None:
-        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-            self._show_menu(event.globalPos())
-        else:
-            event.accept()
+        self._show_menu(event.globalPos())
+        event.accept()
 
     def _show_menu(self, pos: QPoint) -> None:
-        menu = QMenu(self)
-        refresh = QAction("强制刷新", self)
-        refresh.triggered.connect(self._visual_refresh)
-        settings = QAction("设置", self)
-        settings.triggered.connect(self._open_settings)
-        memory = QAction("记忆管理", self)
-        memory.triggered.connect(self._open_memory)
-        like = QAction("喜欢这次提醒", self)
-        like.triggered.connect(self._like_last_reminder)
-        reduce = QAction("减少此类提醒", self)
-        reduce.triggered.connect(self._reduce_last_reminder)
-        expression_menu = menu.addMenu("测试表情")
-        for expression in ("wink", "love", "cry", "awkward", "dizzy", "rose", "punch"):
-            action = QAction(expression, self)
-            action.triggered.connect(
-                lambda _checked=False, name=expression: self._display_text(
-                    f"表情测试：{name}", name, "motion_idle"
-                )
+        if self._companion_menu is None:
+            live2d_debugger = self._open_live2d_debugger if hasattr(self.live2d, "get_parameters") else None
+            self._companion_menu = CompanionMenu(
+                parent=self,
+                open_settings=self._open_settings,
+                open_memory=self._open_memory,
+                analyze_screen=self._visual_refresh,
+                like_reminder=self._like_last_reminder,
+                reduce_reminder=self._reduce_last_reminder,
+                preview_expression=self._preview_expression,
+                open_live2d_debugger=live2d_debugger,
+                quit_app=QApplication.quit,
             )
-            expression_menu.addAction(action)
-        if hasattr(self.live2d, "get_parameters"):
-            live2d_debug = QAction("Live2D 参数调试器", self)
-            live2d_debug.triggered.connect(self._open_live2d_debugger)
-            menu.addAction(live2d_debug)
-        quit_action = QAction("退出", self)
-        quit_action.triggered.connect(QApplication.quit)
-        menu.addAction(refresh)
-        menu.addAction(settings)
-        menu.addAction(memory)
-        menu.addAction(like)
-        menu.addAction(reduce)
-        menu.addSeparator()
-        menu.addAction(quit_action)
-        menu.exec(pos)
+        self._companion_menu.show_at(pos)
+
+    def _preview_expression(self, expression: str) -> None:
+        self._display_text(f"表情测试：{expression}", expression, "motion_idle")
 
     def _open_settings(self) -> None:
-        before = self.preferences.load().renderer_backend
+        before_preferences = self.preferences.load()
         dialog = SettingsDialog(self.preferences, self)
-        if dialog.exec() and dialog.preferences.renderer_backend != before:
-            self._display_text("渲染器已保存，重新启动暖暖后生效呀。", "wink", "motion_idle")
+        if dialog.exec():
+            if dialog.preferences.speech_mode == "off":
+                self.tts_service.stop()
+            if dialog.preferences.renderer_backend != before_preferences.renderer_backend:
+                self._display_text("渲染器已保存，重新启动暖暖后生效呀。", "wink", "motion_idle")
 
     def _open_memory(self) -> None:
         MemoryDialog(self.persona_agent.long_memory, self).exec()
@@ -612,6 +722,10 @@ class MainWindow(QWidget):
         if not text:
             return
         self.input_line.clear()
+        if self.busy:
+            self._pending_user_text = text
+            self._show_thinking("收到啦，暖暖回复完上一条就来看这句呀...", "wink", "motion_idle")
+            return
         context = self._window_context()
         self._run_agent(AgentTask(text, context, proactive=False))
 
@@ -624,6 +738,7 @@ class MainWindow(QWidget):
     def _start_voice_input(self) -> None:
         if self.busy:
             return
+        self._cancel_speech()
         try:
             self.asr_service.start_recording()
         except Exception as exc:
@@ -635,7 +750,9 @@ class MainWindow(QWidget):
         self.input_line.setEnabled(False)
         self.say_button.setEnabled(False)
         self.voice_button.setEnabled(True)
-        self.voice_button.setText("结束录音")
+        self.voice_button.setIcon(qta.icon("fa6s.stop", color="#ffffff"))
+        self.voice_button.setToolTip("结束录音")
+        self.voice_button.setAccessibleName("结束录音")
         self.voice_limit_timer.start(self.settings.asr_max_record_seconds * 1000)
         self._show_thinking("暖暖正在听晓灵说话呀，录好后再点一次结束录音。", "rose", "motion_listen")
 
@@ -651,7 +768,9 @@ class MainWindow(QWidget):
 
     def _handle_asr_result(self, result: dict) -> None:
         self.recording_voice = False
-        self.voice_button.setText("语音")
+        self.voice_button.setIcon(qta.icon("fa6s.microphone", color="#ffffff"))
+        self.voice_button.setToolTip("语音输入")
+        self.voice_button.setAccessibleName("语音输入")
         text = str(result.get("text", "")).strip()
         if not text:
             self._set_busy(False)
@@ -668,7 +787,17 @@ class MainWindow(QWidget):
         self._run_agent(AgentTask(text, context, proactive=False), thinking_text="暖暖正在思考中呀...")
 
     def _observe_low_frequency(self) -> None:
-        if self.busy:
+        if (
+            self.busy
+            or self._pending_user_text
+            or self.input_line.hasFocus()
+            or self.bubble_timer.isActive()
+            or (
+                self._last_user_reply_at is not None
+                and (datetime.now() - self._last_user_reply_at).total_seconds()
+                < self.settings.reply_visible_seconds
+            )
+        ):
             return
         context = self._window_context()
         trigger = self.observer_agent.evaluate(context)
@@ -685,6 +814,7 @@ class MainWindow(QWidget):
     def _visual_refresh(self) -> None:
         if self.busy:
             return
+        self._cancel_speech()
         approved_path = self.context_builder.capture_for_preview()
         if approved_path:
             prompt = QMessageBox(self)
@@ -715,14 +845,26 @@ class MainWindow(QWidget):
 
     def _run_agent(self, task: AgentTask, thinking_text: str = "暖暖正在思考中呀...") -> None:
         if self.busy:
+            if not task.proactive:
+                self._pending_user_text = task.user_text
             return
+        self._active_task_proactive = task.proactive
+        self._cancel_speech()
         self._set_busy(True)
         self._show_thinking(thinking_text, "dizzy", "motion_tilt_head")
+        self.reply_wait_timer.start(4500)
         worker = AgentWorker(self.persona_agent, task)
         worker.signals.finished.connect(self._handle_agent_result)
         self.thread_pool.start(worker)
 
     def _handle_agent_result(self, result: dict) -> None:
+        self.reply_wait_timer.stop()
+        proactive = bool(result.get("_reply_meta", {}).get("proactive", self._active_task_proactive))
+        if proactive and self._pending_user_text:
+            self._set_busy(False)
+            self._active_task_proactive = False
+            self._run_pending_user_message()
+            return
         response = result.get("response", {})
         mapped = self.actions.map(
             response.get("emotion", "wink"),
@@ -735,12 +877,57 @@ class MainWindow(QWidget):
             f"action={mapped.action}",
             f"text={response.get('text', '')[:80]}",
         )
+        reply_text = str(response.get("text", "暖暖在这里呀。"))
         self._display_text(
-            response.get("text", "暖暖在这里呀。"),
+            reply_text,
             mapped.emotion,
             mapped.action,
         )
         self._set_busy(False)
+        if not proactive:
+            self._last_user_reply_at = datetime.now()
+            self._speak_reply(reply_text)
+        self._active_task_proactive = False
+        self._run_pending_user_message()
+
+    def _show_slow_reply(self) -> None:
+        if self.busy:
+            self._show_thinking("网络有点慢，暖暖还在认真思考，没有丢掉你的消息呀...", "dizzy", "motion_think")
+
+    def _run_pending_user_message(self) -> None:
+        text = self._pending_user_text
+        if not text:
+            return
+        self._pending_user_text = None
+        context = self._window_context()
+        QTimer.singleShot(0, lambda: self._run_agent(AgentTask(text, context, proactive=False)))
+
+    def _speak_reply(self, text: str) -> None:
+        mode = self.tts_service.mode
+        if mode == "off":
+            return
+        self._tts_request_id += 1
+        request_id = self._tts_request_id
+        if mode == "system":
+            self.tts_service.speak_system(text)
+            return
+        worker = TTSWorker(self.tts_service, text)
+        worker.signals.finished.connect(
+            lambda result, current=request_id, reply=text: self._handle_tts_result(current, reply, result)
+        )
+        self.thread_pool.start(worker)
+
+    def _handle_tts_result(self, request_id: int, text: str, result: dict) -> None:
+        audio_path = Path(str(result.get("audio_path", ""))) if result.get("audio_path") else None
+        if request_id != self._tts_request_id:
+            if audio_path:
+                audio_path.unlink(missing_ok=True)
+            return
+        self.tts_service.play_online_or_fallback(text, audio_path)
+
+    def _cancel_speech(self) -> None:
+        self._tts_request_id += 1
+        self.tts_service.stop()
 
     def _display_text(self, text: str, expression: str, action: str) -> None:
         mapped = self.actions.map(expression, action)
@@ -754,12 +941,22 @@ class MainWindow(QWidget):
         self.speech_label.setText(text)
         self.input_line.setPlaceholderText("回复暖暖...")
         self._show_bubble()
-        self.bubble_timer.start(6500)
+        self.bubble_timer.start(self.settings.reply_visible_seconds * 1000)
 
     def _show_bubble(self) -> None:
+        # A previous hover/reply timeout must never hide a newly displayed
+        # listening, thinking, or final-response bubble.
+        self.bubble_timer.stop()
+        self.hover_prompt.hide()
         self.bubble.show()
         self.bubble.raise_()
         self.input_line.setFocus(Qt.FocusReason.MouseFocusReason)
+
+    def _hide_bubble(self) -> None:
+        self.bubble.hide()
+        self.input_line.clearFocus()
+        if self.hovered and not self.busy and not self.dragging:
+            self._show_hover_prompt()
 
     def _show_thinking(self, text: str, expression: str, action: str) -> None:
         mapped = self.actions.map(expression, action)
@@ -823,6 +1020,7 @@ class MainWindow(QWidget):
         return False, 0
 
     def closeEvent(self, event) -> None:
+        self._cancel_speech()
         preferences = self.preferences.load()
         if preferences.remember_window_position:
             self.preferences.update(window_x=self.x(), window_y=self.y())

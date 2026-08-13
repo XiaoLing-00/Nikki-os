@@ -6,6 +6,7 @@
   "cell_width": 192,
   "cell_height": 208,
   "default_fps": 8,
+  "outline_mode": "soft",
   "states": {
     "idle": {"row": 0, "frames": 6, "fps": 4, "loop": true},
     "roam_right": {"row": 1, "frames": 8, "fps": 10, "loop": true},
@@ -20,7 +21,14 @@
     "talking": {"strip": "custom/talking.png", "frames": 6, "fps": 8, "loop": true},
     "comfort": {"strip": "custom/comfort.png", "frames": 6, "fps": 6, "loop": false, "next": "idle"},
     "angry": {"strip": "custom/angry.png", "frames": 6, "fps": 9, "loop": false, "next": "idle"},
-    "dragging": {"strip": "custom/dragging.png", "frames": 6, "fps": 10, "loop": true},
+    "dragging": {
+      "strip": "custom/dragging.png",
+      "frames": 6,
+      "fps": 10,
+      "loop": true,
+      "scale": 0.9,
+      "bottom_margin": 10
+    },
     "sleeping": {"strip": "custom/sleeping.png", "frames": 6, "fps": 3, "loop": true}
   }
 }

@@ -14,6 +14,8 @@ dependencies = [
   "requests>=2.31,<3",
   "psutil>=5.9,<8",
   "dashscope>=1.20,<2",
+  "edge-tts>=7.2.8,<8",
+  "qtawesome>=1.4.0,<2",
   "jsonschema>=4.22,<5",
 ]
 

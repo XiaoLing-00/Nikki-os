@@ -71,6 +71,7 @@ def _dependency_checks(renderer: str) -> list[Check]:
         "psutil": "psutil",
         "jsonschema": "jsonschema",
         "PyQt6": "PyQt6",
+        "Qt Text-to-Speech": "PyQt6.QtTextToSpeech",
     }
     if renderer == "live2d":
         required["PyQt6-WebEngine"] = "PyQt6.QtWebEngineWidgets"

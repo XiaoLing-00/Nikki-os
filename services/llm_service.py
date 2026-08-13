@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import requests
+from requests.adapters import HTTPAdapter
 
 from config.settings import Settings
 from services.response_contract import ResponseContractError, validate_response
@@ -16,6 +17,11 @@ class LLMService:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.logger = get_logger(__name__)
+        # Reuse the TLS connection between chat turns. Creating a fresh HTTPS
+        # connection for every short desktop-pet reply adds avoidable latency.
+        self._session = requests.Session()
+        adapter = HTTPAdapter(pool_connections=2, pool_maxsize=4)
+        self._session.mount("https://", adapter)
 
     @property
     def available(self) -> bool:
@@ -45,8 +51,15 @@ class LLMService:
         last_error: Exception | None = None
         for attempt in range(self.settings.request_retries + 1):
             try:
-                content = self._post_chat(self.settings.text_model, messages, json_mode=True)
-                return validate_response(self._extract_json(content))
+                content = self._post_chat(
+                    self.settings.text_model,
+                    messages,
+                    json_mode=True,
+                    enable_thinking=False,
+                    max_tokens=384,
+                )
+                payload = self._repair_common_contract_variants(self._extract_json(content))
+                return validate_response(payload)
             except (requests.RequestException, KeyError, ValueError, ResponseContractError) as exc:
                 last_error = exc
                 self.logger.warning(
@@ -76,12 +89,25 @@ class LLMService:
                     ],
                 }
             ]
-            return self._post_chat(self.settings.vision_model, messages).strip()
+            return self._post_chat(
+                self.settings.vision_model,
+                messages,
+                enable_thinking=False,
+                max_tokens=512,
+            ).strip()
         except Exception as exc:
             self.logger.exception("DashScope vision call failed: %s", exc)
             return "视觉识别失败，暖暖只看到了一个模糊的屏幕印象。"
 
-    def _post_chat(self, model: str, messages: list[dict], json_mode: bool = False) -> str:
+    def _post_chat(
+        self,
+        model: str,
+        messages: list[dict],
+        json_mode: bool = False,
+        *,
+        enable_thinking: bool | None = None,
+        max_tokens: int | None = None,
+    ) -> str:
         url = f"{self.settings.dashscope_base_url}/chat/completions"
         body: dict[str, Any] = {
             "model": model,
@@ -90,7 +116,11 @@ class LLMService:
         }
         if json_mode:
             body["response_format"] = {"type": "json_object"}
-        response = requests.post(
+        if enable_thinking is not None:
+            body["enable_thinking"] = enable_thinking
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
+        response = self._session.post(
             url,
             headers={
                 "Authorization": f"Bearer {self.settings.dashscope_api_key}",
@@ -114,3 +144,28 @@ class LLMService:
         if start != -1 and end != -1:
             content = content[start : end + 1]
         return json.loads(content)
+
+    @staticmethod
+    def _repair_common_contract_variants(payload: dict[str, Any]) -> dict[str, Any]:
+        """Map a few harmless Flash-model synonyms onto the strict renderer contract."""
+        response = payload.get("response")
+        if not isinstance(response, dict):
+            return payload
+        emotion_aliases = {
+            "excited": "happy",
+            "shy": "love",
+            "neutral": "wink",
+            "smile": "wink",
+            "calm": "gentle",
+        }
+        action_aliases = {
+            "motion_happy": "motion_excited",
+            "motion_smile": "motion_idle",
+        }
+        emotion = response.get("emotion")
+        action = response.get("action")
+        if emotion in emotion_aliases:
+            response["emotion"] = emotion_aliases[emotion]
+        if action in action_aliases:
+            response["action"] = action_aliases[action]
+        return payload

@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "images": {
+    "assets/sprites/nuannuan/custom/dragging.png": {
+      "ok": true,
+      "algorithm": "palette-aware-global-green-neutralization",
+      "radius": 5,
+      "green_dominance_threshold": 3,
+      "changed_boundary_pixels": 19063,
+      "changed_interior_pixels": 0,
+      "changed_pixels": 19063,
+      "hidden_rgb_cleared": 0,
+      "alpha_preserved": true
+    }
+  }
+}

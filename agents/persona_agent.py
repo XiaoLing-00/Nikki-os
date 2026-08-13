@@ -24,7 +24,7 @@ SYSTEM_PROMPT = """
   },
   "response": {
     "text": "面向用户的中文短句，控制在 80 字以内",
-    "emotion": "wink|love|cry|awkward|dizzy|rose|punch|gentle|sad|angry",
+    "emotion": "wink|love|cry|awkward|dizzy|rose|punch|gentle|sad|angry|happy",
     "action": "motion_idle|motion_talk|motion_tilt_head|motion_wave|motion_comfort|motion_excited|motion_think|motion_listen|motion_dragging|motion_shy"
   },
   "memory_update": {
@@ -32,6 +32,8 @@ SYSTEM_PROMPT = """
     "sentiment": "positive|neutral|negative"
   }
 }
+
+表情 emotion 必须从上面列出的值中选择，不要输出 excited、shy、neutral 或其他值。
 """
 
 
@@ -50,10 +52,13 @@ class PersonaAgent:
         memory_query = " ".join(
             [user_text, str(context.get("topic", "")), str(context.get("app", ""))]
         )
-        memories = self.long_memory.relevant_memories(memory_query, limit=8)
+        # Keep the conversational prompt intentionally small. The previous
+        # version sent up to 30 history messages and duplicated them again as
+        # a transcript inside the user payload.
+        memories = self.long_memory.relevant_memories(memory_query, limit=4)
         profile = self.long_memory.profile()
         stats = self.long_memory.stats()
-        interactions = self.long_memory.recent_interactions(limit=5)
+        interactions = self.long_memory.recent_interactions(limit=3)
         user_prompt = json.dumps(
             {
                 "event_type": "proactive" if proactive else "dialogue",
@@ -63,14 +68,13 @@ class PersonaAgent:
                 "character_stats": stats,
                 "recent_memories": memories,
                 "recent_interactions": interactions,
-                "short_memory": self.short_memory.transcript(),
             },
             ensure_ascii=False,
         )
         result = self.llm_service.chat_json(
             SYSTEM_PROMPT,
             user_prompt,
-            history=self.short_memory.messages(),
+            history=self.short_memory.messages()[-8:],
         )
         result = self._normalize(result, context)
 

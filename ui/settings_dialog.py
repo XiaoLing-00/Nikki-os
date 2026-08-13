@@ -57,6 +57,25 @@ class SettingsDialog(QDialog):
         self.renderer.addItem("Live2D（实验模式）", "live2d")
         self.renderer.setCurrentIndex(max(0, self.renderer.findData(self.preferences.renderer_backend)))
         form.addRow("角色渲染器", self.renderer)
+        self.speech_mode = QComboBox()
+        self.speech_mode.addItem("免费在线神经语音（无需密钥）", "edge")
+        self.speech_mode.addItem("仅使用系统语音（离线）", "system")
+        self.speech_mode.addItem("关闭语音播报", "off")
+        self.speech_mode.setCurrentIndex(max(0, self.speech_mode.findData(self.preferences.speech_mode)))
+        form.addRow("回复语音", self.speech_mode)
+        self.speech_voice = QComboBox()
+        self.speech_voice.addItem("晓晓（温柔自然女声）", "zh-CN-XiaoxiaoNeural")
+        self.speech_voice.addItem("晓伊（活泼女声）", "zh-CN-XiaoyiNeural")
+        self.speech_voice.addItem("云希（自然男声）", "zh-CN-YunxiNeural")
+        self.speech_voice.setCurrentIndex(max(0, self.speech_voice.findData(self.preferences.speech_voice)))
+        form.addRow("在线音色", self.speech_voice)
+        self.speech_rate = QSpinBox()
+        self.speech_rate.setRange(-20, 30)
+        self.speech_rate.setSuffix("%")
+        self.speech_rate.setValue(self.preferences.speech_rate)
+        form.addRow("语速调整", self.speech_rate)
+        self.speech_mode.currentIndexChanged.connect(self._update_speech_controls)
+        self._update_speech_controls()
         self.remember_position = QCheckBox("记住桌宠位置")
         self.remember_position.setChecked(self.preferences.remember_window_position)
         form.addRow(self.remember_position)
@@ -65,6 +84,11 @@ class SettingsDialog(QDialog):
         form.addRow(self.auto_start)
         form.addRow(QLabel("切换渲染器后需要重新启动暖暖。"))
         return page
+
+    def _update_speech_controls(self) -> None:
+        online = self.speech_mode.currentData() == "edge"
+        self.speech_voice.setEnabled(online)
+        self.speech_rate.setEnabled(online)
 
     def _privacy_tab(self) -> QWidget:
         page = QWidget()
@@ -122,6 +146,9 @@ class SettingsDialog(QDialog):
         self.preferences = replace(
             self.preferences,
             renderer_backend=str(self.renderer.currentData()),
+            speech_mode=str(self.speech_mode.currentData()),
+            speech_voice=str(self.speech_voice.currentData()),
+            speech_rate=self.speech_rate.value(),
             perception_mode=str(self.perception.currentData()),
             vision_enabled=self.vision.isChecked(),
             proactive_enabled=self.proactive.isChecked(),

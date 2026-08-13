@@ -29,6 +29,10 @@
 
 语音输入由气泡中的“语音”按钮触发：系统录制一段短音频，调用 DashScope Paraformer ASR 转为文本，再进入同一条 Persona Agent 对话链路。
 
+语音回复默认通过 `edge-tts` 使用 Microsoft Edge 在线神经语音（无需 API Key），可在设置中选择晓晓、晓伊或云希并调整语速。该在线服务不提供可用性保证；断网或合成失败时会自动回退到系统语音，也可改为纯离线或关闭播报。依赖授权说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+鼠标悬停在暖暖身上时只显示轻量的“和暖暖说话”胶囊；单击小人或胶囊后才展开完整输入区。按 `Esc` 可收起聊天框，普通右键打开功能菜单。
+
 当文本、语音或屏幕视觉请求正在等待模型返回时，气泡会显示“暖暖正在思考中/看屏幕中”的状态，输入按钮暂时禁用，避免界面看起来卡顿。
 
 ### 记忆闭环
@@ -82,15 +86,16 @@ python main.py
 
 ```env
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-SOULPET_TEXT_MODEL=qwen-max-latest
-SOULPET_VISION_MODEL=qwen3-vl-plus
+SOULPET_TEXT_MODEL=qwen3.6-flash
+SOULPET_VISION_MODEL=qwen3.7-plus
 SOULPET_ASR_MODEL=paraformer-realtime-v2
 SOULPET_ASR_RECORD_SECONDS=5
 SOULPET_ASR_SAMPLE_RATE=16000
 SOULPET_ASR_MAX_RECORD_SECONDS=30
 SOULPET_RENDERER=sprite
-SOULPET_REQUEST_TIMEOUT=45
-SOULPET_REQUEST_RETRIES=1
+SOULPET_REQUEST_TIMEOUT=20
+SOULPET_REQUEST_RETRIES=0
+SOULPET_REPLY_VISIBLE_SECONDS=20
 ```
 
 详见 [隐私说明](PRIVACY.md)、[Live2D 绑定审计](docs/live2d-rig-audit.md)、[Live2D 能力边界](docs/live2d-limitations.md)和[双渲染器评估协议](docs/evaluation-protocol.md)。
@@ -151,6 +156,7 @@ Persona Agent 与 UI、Memory、Observer 之间统一使用以下 JSON：
 | 感知 | `perception/context_builder.py` | 生成低频窗口上下文与高频视觉上下文 |
 | 模型服务 | `services/llm_service.py` | 调用 DashScope OpenAI 兼容接口 |
 | 语音识别 | `services/asr_service.py` | 录制短音频并调用 DashScope Paraformer ASR |
+| 语音合成 | `services/tts_service.py` | Edge 在线神经语音，失败时回退到系统 TTS |
 | Observer | `agents/observer_agent.py` | 勤奋、休闲、深夜主动触发 |
 | Persona | `agents/persona_agent.py` | 人设提示词、结构化回复、记忆写入 |
 | UI | `ui/main_window.py` | 透明置顶窗口、气泡输入、右键菜单、后台线程 |
