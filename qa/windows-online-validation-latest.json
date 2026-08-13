@@ -1,0 +1,30 @@
+{
+  "validated_at": "2026-08-13T06:37:27.060827+00:00",
+  "platform": "Windows",
+  "source_commit": "ae70d30c4478b34329dd62459865720b866331c5",
+  "secrets_recorded": false,
+  "chat": {
+    "provider": "DashScope",
+    "model": "qwen3.6-flash",
+    "thinking": false,
+    "latency_ms": 1349.8,
+    "reply_characters": 25,
+    "emotion": "happy",
+    "action": "motion_wave"
+  },
+  "tts": {
+    "provider": "Edge Neural TTS",
+    "voice": "zh-CN-XiaoxiaoNeural",
+    "latency_ms": 2039.8,
+    "audio_size_bytes": 25632,
+    "audio_sha256": "1874e4e7f7666ca82d9b61fa4d7839c4dd9e905b7be276da6b36246ffd0d8e12",
+    "temporary_audio_deleted": true
+  },
+  "asr": {
+    "tested": true,
+    "model": "paraformer-realtime-v2",
+    "latency_ms": 1022.1,
+    "transcript_characters": 22,
+    "fixture_sha256": "1d55a7c8a39aaea64650f0205d6de09d7a44140168cc75f94a47dcb81f888672"
+  }
+}
