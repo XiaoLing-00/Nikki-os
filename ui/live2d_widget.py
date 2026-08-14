@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
-from PyQt6.QtCore import QEvent, QObject, Qt, QUrl, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import QObject, Qt, QUrl, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QColor
 from PyQt6.QtWebChannel import QWebChannel
 from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
@@ -97,6 +98,47 @@ class Live2DWidget(QWebEngineView):
 
     def set_idle_state(self, state: str) -> None:
         self._run_js(f"window.SoulPet && window.SoulPet.setIdleState({state!r});")
+
+    def set_parameter(self, parameter_id: str, value: float) -> None:
+        self._run_js(
+            "window.SoulPet && window.SoulPet.setParameter("
+            f"{parameter_id!r}, {float(value)});"
+        )
+
+    def get_parameters(self, callback) -> None:
+        def decode(payload) -> None:
+            if not isinstance(payload, str):
+                callback([])
+                return
+            try:
+                parameters = json.loads(payload)
+            except json.JSONDecodeError:
+                parameters = []
+            callback(parameters if isinstance(parameters, list) else [])
+
+        self.page().runJavaScript(
+            "JSON.stringify(window.SoulPet ? window.SoulPet.getParameters() : [])",
+            decode,
+        )
+
+    def reset_frame_stats(self) -> None:
+        self._run_js("window.SoulPet && window.SoulPet.resetFrameStats();")
+
+    def get_frame_stats(self, callback) -> None:
+        def decode(payload) -> None:
+            if not isinstance(payload, str):
+                callback({})
+                return
+            try:
+                stats = json.loads(payload)
+            except json.JSONDecodeError:
+                stats = {}
+            callback(stats if isinstance(stats, dict) else {})
+
+        self.page().runJavaScript(
+            "JSON.stringify(window.SoulPet ? window.SoulPet.getFrameStats() : {})",
+            decode,
+        )
 
     def _run_js(self, script: str) -> None:
         self.page().runJavaScript(script)

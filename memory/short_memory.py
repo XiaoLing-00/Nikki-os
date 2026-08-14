@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Deque
 
 
 @dataclass
 class ShortMemory:
     max_turns: int = 15
-    _messages: Deque[dict[str, str]] = field(init=False)
+    _messages: deque[dict[str, str]] = field(init=False)
 
     def __post_init__(self) -> None:
         self._messages = deque(maxlen=self.max_turns * 2)

@@ -1,0 +1,27 @@
+{
+  "pet_id": "nuannuan",
+  "display_name": "暖暖",
+  "imported_from": "user-provided Hatch export",
+  "atlas": {
+    "columns": 8,
+    "rows": 9,
+    "cell_width": 192,
+    "cell_height": 208,
+    "width": 1536,
+    "height": 1872
+  },
+  "original_states": {
+    "idle": 6,
+    "running-right": 8,
+    "running-left": 8,
+    "waving": 4,
+    "jumping": 5,
+    "failed": 8,
+    "waiting": 6,
+    "running": 6,
+    "review": 6
+  },
+  "chroma_key": "#00FF00",
+  "style_contract": "Compact full-body chibi sticker, pink twin-tail hair, black side hair bands and bows, pink-and-white frilled dress, readable in a 192x208 cell.",
+  "privacy_note": "Original machine paths and account-scoped messaging paths were intentionally removed during import."
+}

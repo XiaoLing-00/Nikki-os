@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "method": "sequential same-machine renderer benchmark",
+  "duration_seconds_per_renderer": 900,
+  "fixed_window_size": [
+    430,
+    660
+  ],
+  "fixed_state_script": [
+    "idle",
+    "talking",
+    "dragging",
+    "roam_right"
+  ],
+  "results": {
+    "sprite": {
+      "renderer": "sprite",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "python": "3.12.10",
+      "duration_seconds": 900,
+      "ready": true,
+      "cold_start_seconds": 0.1,
+      "states_exercised": [
+        "idle",
+        "talking",
+        "dragging",
+        "roam_right"
+      ],
+      "resources": {
+        "cpu_percent_process_tree": {
+          "samples": 892,
+          "mean": 0.689,
+          "median": 0.0,
+          "p95": 1.6,
+          "maximum": 3.2
+        },
+        "rss_mib_process_tree": {
+          "samples": 892,
+          "mean": 63.788,
+          "median": 63.836,
+          "p95": 64.055,
+          "maximum": 64.059
+        }
+      },
+      "frame_pacing": {
+        "sample_count": 3445,
+        "average_ms": 261.112,
+        "p95_ms": 267.977,
+        "maximum_ms": 285.564,
+        "late_frame_ratio": 0.0,
+        "native_rate": "state-dependent 4-10 fps"
+      },
+      "worker_exit_code": 0
+    },
+    "live2d": {
+      "renderer": "live2d",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "python": "3.12.10",
+      "duration_seconds": 900,
+      "ready": true,
+      "cold_start_seconds": 0.563,
+      "states_exercised": [
+        "idle",
+        "talking",
+        "dragging",
+        "roam_right"
+      ],
+      "resources": {
+        "cpu_percent_process_tree": {
+          "samples": 900,
+          "mean": 62.116,
+          "median": 61.9,
+          "p95": 82.8,
+          "maximum": 106.4
+        },
+        "rss_mib_process_tree": {
+          "samples": 900,
+          "mean": 897.61,
+          "median": 898.678,
+          "p95": 900.262,
+          "maximum": 934.172
+        }
+      },
+      "frame_pacing": {
+        "sample_count": 53666,
+        "average_ms": 16.76632691089308,
+        "p95_ms": 18.100000023841858,
+        "maximum_ms": 94.7999999821186,
+        "late_frame_ratio": 0.013118175381060634,
+        "native_rate": "WebGL display ticker"
+      },
+      "worker_exit_code": 0
+    }
+  },
+  "engineering_default_recommendation": "sprite",
+  "human_visual_panel": {
+    "status": "not_collected",
+    "required_viewers": 5,
+    "reason": "Viewer preference requires independent human judgments and is not synthesized."
+  },
+  "selection": "Use sprite as the production default on this machine; keep the other renderer selectable."
+}

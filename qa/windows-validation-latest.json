@@ -1,0 +1,24 @@
+{
+  "validated_at": "2026-08-13T14:17:34.9309325+08:00",
+  "platform": "Microsoft Windows 11 专业版 10.0.26200 AMD64",
+  "python": "Python 3.12.10",
+  "commit": "57d6f6b7a0aac989151e5a0927c965f8e7ea5b13",
+  "checks": {
+    "ruff": "pass",
+    "pytest": "60 passed in 1.32s",
+    "doctor_source": "pass",
+    "doctor_packaged": "pass",
+    "packaged_sprite_alive_after_seconds": 10,
+    "packaged_live2d_alive_after_seconds": 15
+  },
+  "package": {
+    "type": "PyInstaller onedir",
+    "executable": "dist/NikkiOS/NikkiOS.exe",
+    "sha256": "0d7e876c7d3de86377c28a7068afc8cefe8efea9f580d484c345af232111bd35",
+    "size_bytes": 6826517
+  },
+  "notes": [
+    "Cloud AI calls were not exercised; no API key was placed on the Windows validation host.",
+    "The report intentionally omits host address, account name, and credentials."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "status": "concept-only-not-runtime-strip",
+  "purpose": "Candidate source art for a future sleeping or goodnight sequence",
+  "fixes": [
+    "removed the unintended translucent blue face artifact",
+    "reconstructed the covered bangs and facial area",
+    "replaced asymmetric eye smears with a symmetric closed-eye expression",
+    "removed feet protruding below the blanket and restored the blanket edge"
+  ],
+  "output": "qa/sprites/sleeping-concept-fixed.png",
+  "size": [
+    1163,
+    1352
+  ],
+  "sha256": "4613406576e9b76fdafdbe659a21b9d87a2507c7ee95f0713b4d4e4b062bb1bf"
+}

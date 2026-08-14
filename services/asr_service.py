@@ -4,6 +4,7 @@ import tempfile
 import threading
 import wave
 from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 from config.settings import Settings
 from utils.logger import get_logger
@@ -125,7 +126,6 @@ class ASRService:
 
         chunk = 1024
         channels = 1
-        sample_width = 2
         sample_rate = self.settings.asr_sample_rate
         frame_count = int(sample_rate / chunk * self.settings.asr_record_seconds)
         audio = pyaudio.PyAudio()
@@ -186,6 +186,9 @@ class ASRService:
             pass
 
         dashscope.api_key = self.settings.dashscope_api_key
+        http_api_url, websocket_api_url = self._dashscope_sdk_urls()
+        dashscope.base_http_api_url = http_api_url
+        dashscope.base_websocket_api_url = websocket_api_url
         recognition = Recognition(
             model=self.settings.asr_model,
             callback=_Callback(),
@@ -203,6 +206,15 @@ class ASRService:
         if status_code and int(status_code) >= 400:
             raise RuntimeError(f"{status_code} {code or ''} {message or ''}".strip())
         raise RuntimeError("empty ASR result")
+
+    def _dashscope_sdk_urls(self) -> tuple[str, str]:
+        """Keep DashScope SDK speech calls in the same region as chat calls."""
+        parsed = urlsplit(self.settings.dashscope_base_url)
+        http_api_url = urlunsplit((parsed.scheme or "https", parsed.netloc, "/api/v1", "", ""))
+        websocket_api_url = urlunsplit(
+            ("wss", parsed.netloc, "/api-ws/v1/inference", "", "")
+        )
+        return http_api_url, websocket_api_url
 
     @staticmethod
     def _extract_text(result) -> str:

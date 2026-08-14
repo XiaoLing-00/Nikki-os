@@ -3,15 +3,16 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+import unittest.mock
 from datetime import datetime
 from pathlib import Path
 
 from agents.observer_agent import ObserverAgent
 from agents.persona_agent import PersonaAgent
-from config.settings import Settings
+from config.preferences import PreferencesStore
+from config.settings import Settings, get_settings
 from memory.long_memory import LongMemory
 from ui.action_controller import ActionController
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,6 +27,11 @@ class FakeLongMemory:
 
 
 class RuntimeContractsTest(unittest.TestCase):
+    def _unmuted_preferences(self, tmpdir: str) -> PreferencesStore:
+        store = PreferencesStore(Path(tmpdir) / "preferences.json")
+        store.update(quiet_start=0, quiet_end=0)
+        return store
+
     def test_action_controller_maps_persona_emotions_to_existing_expressions(self) -> None:
         model = json.loads((ROOT / "assets/live2d/nikki/model3.json").read_text(encoding="utf-8"))
         available = {
@@ -59,12 +65,13 @@ class RuntimeContractsTest(unittest.TestCase):
     def test_observer_triggers_long_coding_after_threshold(self) -> None:
         settings = Settings(observer_interval_ms=60_000, coding_minutes_threshold=2)
         memory = FakeLongMemory()
-        observer = ObserverAgent(settings, memory)  # type: ignore[arg-type]
-        observer._triggered.add(f"late_night_{datetime.now().date()}")
-        observer._triggered.add(f"morning_{datetime.now().date()}")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            observer = ObserverAgent(settings, memory, self._unmuted_preferences(tmpdir))  # type: ignore[arg-type]
+            observer._triggered.add(f"late_night_{datetime.now().date()}")
+            observer._triggered.add(f"morning_{datetime.now().date()}")
 
-        self.assertIsNone(observer.evaluate({"app": "VS Code"}))
-        trigger = observer.evaluate({"app": "VS Code"})
+            self.assertIsNone(observer.evaluate({"app": "VS Code"}))
+            trigger = observer.evaluate({"app": "VS Code"})
 
         self.assertIsNotNone(trigger)
         self.assertEqual(trigger["reason"], "long_coding")
@@ -72,11 +79,12 @@ class RuntimeContractsTest(unittest.TestCase):
     def test_observer_triggers_high_place_reaction(self) -> None:
         settings = Settings()
         memory = FakeLongMemory()
-        observer = ObserverAgent(settings, memory)  # type: ignore[arg-type]
-        observer._triggered.add(f"late_night_{datetime.now().date()}")
-        observer._triggered.add(f"morning_{datetime.now().date()}")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            observer = ObserverAgent(settings, memory, self._unmuted_preferences(tmpdir))  # type: ignore[arg-type]
+            observer._triggered.add(f"late_night_{datetime.now().date()}")
+            observer._triggered.add(f"morning_{datetime.now().date()}")
 
-        trigger = observer.evaluate({"app": "Browser", "pet_window_y": 20})
+            trigger = observer.evaluate({"app": "Browser", "pet_window_y": 20})
 
         self.assertIsNotNone(trigger)
         self.assertEqual(trigger["reason"], "high_place")
@@ -123,20 +131,61 @@ class RuntimeContractsTest(unittest.TestCase):
         self.assertIn("self.say_button.setEnabled(not busy)", source)
         self.assertIn("self.voice_button.setEnabled(not busy)", source)
 
-    def test_ui_supports_two_step_voice_right_click_vision_and_idle_roaming(self) -> None:
+    def test_new_bubble_cancels_an_old_hide_timer(self) -> None:
+        source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
+        show_bubble = source.split("def _show_bubble", 1)[1].split("def _show_thinking", 1)[0]
+
+        self.assertLess(show_bubble.index("self.bubble_timer.stop()"), show_bubble.index("self.bubble.show()"))
+
+    def test_mouse_leave_does_not_shorten_an_active_reply_timer(self) -> None:
+        source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
+        leave_event = source.split("def leaveEvent", 1)[1].split("def keyPressEvent", 1)[0]
+
+        self.assertIn("not self.busy", leave_event)
+        self.assertIn("not self.bubble_timer.isActive()", leave_event)
+
+    def test_ui_supports_two_step_voice_menu_vision_and_idle_roaming(self) -> None:
         source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
 
-        self.assertIn("self.hovered = True", source)
+        self.assertIn("def _update_hover_state", source)
+        self.assertIn("self._pet_hit_rect().contains(position)", source)
         self.assertIn("def keyPressEvent", source)
         self.assertIn("Qt.Key.Key_Space", source)
         self.assertIn("def _toggle_voice_input", source)
         self.assertIn("结束录音", source)
         self.assertIn("ASRTranscribeWorker", source)
-        self.assertIn("Qt.MouseButton.RightButton", source)
-        self.assertIn("self._visual_refresh()", source)
+        self.assertIn("def contextMenuEvent", source)
+        self.assertIn("self._show_menu(event.globalPos())", source)
+        self.assertIn("CompanionMenu(", source)
+        self.assertIn("analyze_screen=self._visual_refresh", source)
         self.assertIn("self.roam_timer", source)
         self.assertIn("def _idle_roam_step", source)
         self.assertIn("pet_window_y", source)
+
+    def test_hover_is_compact_and_click_opens_full_chat(self) -> None:
+        source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
+
+        self.assertIn('self.hover_prompt.setGeometry(123, 84, 184, 48)', source)
+        self.assertIn('self.hover_text_button = QPushButton("和暖暖说话")', source)
+        self.assertIn('qta.icon("mdi6.comment-processing-outline"', source)
+        self.assertIn("self.hover_text_button.clicked.connect(self._open_chat)", source)
+        self.assertIn("self.hover_chat_button.clicked.connect(self._open_chat)", source)
+        self.assertIn("elif clicked_pet:", source)
+        self.assertIn("self._open_chat()", source)
+        self.assertIn("Qt.Key.Key_Escape", source)
+        self.assertIn("self._hide_bubble()", source)
+
+    def test_plain_right_click_opens_menu_instead_of_triggering_vision(self) -> None:
+        source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
+        mouse_press = source.split("def mousePressEvent", 1)[1].split("def mouseMoveEvent", 1)[0]
+        context_menu = source.split("def contextMenuEvent", 1)[1].split("def _show_menu", 1)[0]
+
+        self.assertNotIn("_visual_refresh", mouse_press)
+        self.assertNotIn("ControlModifier", context_menu)
+        self.assertIn("self._show_menu(event.globalPos())", context_menu)
+        menu_source = (ROOT / "ui/companion_menu.py").read_text(encoding="utf-8")
+        self.assertIn("分析屏幕", menu_source)
+        self.assertIn("会先请你确认截图", menu_source)
 
     def test_visual_refresh_runs_context_building_in_background_worker(self) -> None:
         source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
@@ -168,13 +217,46 @@ class RuntimeContractsTest(unittest.TestCase):
         self.assertIn("NamedTemporaryFile", source)
         self.assertIn("unlink(missing_ok=True)", source)
         self.assertIn("asr_model", settings)
+        self.assertIn("base_websocket_api_url", source)
         self.assertIn("ASRService(settings)", main)
+
+    def test_singapore_endpoint_selects_supported_asr_default(self) -> None:
+        with unittest.mock.patch("config.settings.load_env_file"), unittest.mock.patch.dict(
+            "os.environ",
+            {"DASHSCOPE_BASE_URL": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"},
+            clear=True,
+        ):
+            settings = get_settings()
+
+        self.assertEqual(settings.asr_model, "fun-asr-realtime")
 
     def test_asr_result_releases_busy_before_sending_to_agent(self) -> None:
         source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
         handler = source.split("def _handle_asr_result", 1)[1].split("def _observe_low_frequency", 1)[0]
 
         self.assertLess(handler.index("self._set_busy(False)"), handler.rindex("self._run_agent("))
+
+    def test_tts_is_backgrounded_and_has_a_system_fallback(self) -> None:
+        source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
+        tts = (ROOT / "services/tts_service.py").read_text(encoding="utf-8")
+
+        self.assertIn("class TTSWorker", source)
+        self.assertIn("self.thread_pool.start(worker)", source)
+        self.assertIn("QTextToSpeech", tts)
+        self.assertIn("edge_tts.Communicate", tts)
+        self.assertIn("synthesize_online", tts)
+        self.assertIn("speak_system", tts)
+
+    def test_user_messages_are_queued_and_replies_stay_visible(self) -> None:
+        source = (ROOT / "ui/main_window.py").read_text(encoding="utf-8")
+        settings = (ROOT / "config/settings.py").read_text(encoding="utf-8")
+
+        self.assertIn("self._pending_user_text = text", source)
+        self.assertIn("def _run_pending_user_message", source)
+        self.assertIn("self.reply_wait_timer.start(4500)", source)
+        self.assertIn("网络有点慢", source)
+        self.assertIn("reply_visible_seconds", settings)
+        self.assertIn("self.settings.reply_visible_seconds * 1000", source)
 
     def test_actions_json_contains_time_based_idle_states(self) -> None:
         actions = json.loads((ROOT / "assets/live2d/actions.json").read_text(encoding="utf-8"))

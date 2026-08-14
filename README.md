@@ -1,6 +1,8 @@
-# 苏暖暖桌面情感陪伴系统
+# 苏暖暖桌面情感陪伴系统 Nikki OS 0.2
 
-这是一个面向毕业设计演示的桌面情感陪伴系统。系统以“苏暖暖（Nikki）”为角色，通过感知、对话、记忆、主动交互四个闭环，展示多智能体桌宠在桌面场景中的情境理解与陪伴能力。
+这是一个面向毕业设计演示的桌面情感陪伴系统。系统以“苏暖暖（Nikki）”为角色，通过感知、对话、记忆、主动交互四个闭环，展示多智能体桌宠在桌面场景中的情境理解与陪伴能力。v0.2 同时提供序列帧和 Live2D 两套可切换渲染器，macOS 可用于开发，Windows 为最终发布目标。
+
+> 默认使用完全离线、跨平台稳定的序列帧模式。Live2D 为可切换的实验模式，JS 依赖已全部本地化。
 
 ## 1. 项目定位
 
@@ -9,7 +11,7 @@
 - Observer Agent：后台观察用户当前桌面情境，判断是否需要主动关怀。
 - Persona Agent：扮演苏暖暖，结合上下文、短期记忆和长期记忆生成回复。
 - Memory Layer：短期 List 保存最近 15 轮上下文，SQLite 保存长期事实记忆。
-- UI Layer：PyQt6 + QWebEngineView 展示透明置顶桌宠、气泡输入框和 Live2D 模型。
+- UI Layer：PyQt6 透明置顶窗口，用统一状态机驱动序列帧或 QWebEngineView Live2D。
 
 苏暖暖的人设为：单纯、善良、情绪化，说话会带“哒、呀、唔”等助词；讨厌数学，但会努力安慰用户。
 
@@ -27,6 +29,10 @@
 
 语音输入由气泡中的“语音”按钮触发：系统录制一段短音频，调用 DashScope Paraformer ASR 转为文本，再进入同一条 Persona Agent 对话链路。
 
+语音回复默认通过 `edge-tts` 使用 Microsoft Edge 在线神经语音（无需 API Key），可在设置中选择晓晓、晓伊或云希并调整语速。该在线服务不提供可用性保证；断网或合成失败时会自动回退到系统语音，也可改为纯离线或关闭播报。依赖授权说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+
+鼠标悬停在暖暖身上时只显示轻量的“和暖暖说话”胶囊；单击小人或胶囊后才展开完整输入区。按 `Esc` 可收起聊天框，普通右键打开功能菜单。
+
 当文本、语音或屏幕视觉请求正在等待模型返回时，气泡会显示“暖暖正在思考中/看屏幕中”的状态，输入按钮暂时禁用，避免界面看起来卡顿。
 
 ### 记忆闭环
@@ -43,12 +49,23 @@ Observer Agent 根据逻辑模板触发主动关怀：
 
 ## 3. 运行方式
 
-建议使用 Python 3.10+。
+建议使用 Python 3.10-3.12。macOS 可直接开发和运行：
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install ".[dev]"
+python main.py --doctor
+python main.py
+```
+
+Windows：
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+python -m pip install ".[windows,voice]"
+python main.py --doctor
 ```
 
 在项目根目录创建 `.env`：
@@ -63,16 +80,36 @@ DASHSCOPE_API_KEY=sk-your-dashscope-api-key
 python main.py
 ```
 
+设置中可选“序列帧”或“Live2D”，保存后重启生效；也可用 `SOULPET_RENDERER=sprite|live2d` 临时覆盖。Windows 可执行 `.\scripts\build_windows.ps1` 生成 `dist\NikkiOS\NikkiOS.exe`。
+
 可选配置：
 
 ```env
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-SOULPET_TEXT_MODEL=qwen-max-latest
-SOULPET_VISION_MODEL=qwen3-vl-plus
+SOULPET_TEXT_MODEL=qwen3.6-flash
+SOULPET_VISION_MODEL=qwen3.7-plus
 SOULPET_ASR_MODEL=paraformer-realtime-v2
 SOULPET_ASR_RECORD_SECONDS=5
 SOULPET_ASR_SAMPLE_RATE=16000
+SOULPET_ASR_MAX_RECORD_SECONDS=30
+SOULPET_RENDERER=sprite
+SOULPET_REQUEST_TIMEOUT=20
+SOULPET_REQUEST_RETRIES=0
+SOULPET_REPLY_VISIBLE_SECONDS=20
 ```
+
+详见 [隐私说明](PRIVACY.md)、[Live2D 绑定审计](docs/live2d-rig-audit.md)、[Live2D 能力边界](docs/live2d-limitations.md)和[双渲染器评估协议](docs/evaluation-protocol.md)。
+
+模型绑定与渲染性能可以复现检查：
+
+```bash
+python scripts/audit_live2d_model.py
+python scripts/make_sprite_qa.py
+python scripts/render_sprite_qa.py --label macos
+python scripts/benchmark_renderers.py --duration-seconds 900
+```
+
+第一条通过实际 Cubism Core 运行时导出参数和物理链审计；中间两条检查原图、双线性放大与实际 Qt 渲染后的透明边缘，并在深浅背景输出全部 15 个状态；最后一条依次对序列帧和 Live2D 执行同样的 15 分钟动作脚本，记录进程树 CPU、RSS、启动时间和帧间隔。当前生产默认仍为序列帧，Live2D 保留为可选模式。
 
 ## 4. 接口协议
 
@@ -119,10 +156,11 @@ Persona Agent 与 UI、Memory、Observer 之间统一使用以下 JSON：
 | 感知 | `perception/context_builder.py` | 生成低频窗口上下文与高频视觉上下文 |
 | 模型服务 | `services/llm_service.py` | 调用 DashScope OpenAI 兼容接口 |
 | 语音识别 | `services/asr_service.py` | 录制短音频并调用 DashScope Paraformer ASR |
+| 语音合成 | `services/tts_service.py` | Edge 在线神经语音，失败时回退到系统 TTS |
 | Observer | `agents/observer_agent.py` | 勤奋、休闲、深夜主动触发 |
 | Persona | `agents/persona_agent.py` | 人设提示词、结构化回复、记忆写入 |
 | UI | `ui/main_window.py` | 透明置顶窗口、气泡输入、右键菜单、后台线程 |
-| Live2D | `ui/live2d_widget.py` | QWebEngineView 与 HTML/JS 通信 |
+| Live2D | `ui/live2d_widget.py` | QWebEngineView 与 HTML/JS 通信、参数与帧统计桥接 |
 
 ## 6. 技术难点
 

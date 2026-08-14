@@ -1,0 +1,463 @@
+{
+  "ok": true,
+  "atlas": {
+    "ok": true,
+    "size": [
+      1536,
+      1872
+    ],
+    "cells": 72,
+    "boundary_green_spill_pixels": 0,
+    "scaled_boundary_green_spill_pixels": 0
+  },
+  "states": {
+    "talking": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          28,
+          5,
+          164,
+          203
+        ],
+        [
+          28,
+          5,
+          164,
+          203
+        ],
+        [
+          28,
+          5,
+          164,
+          203
+        ],
+        [
+          27,
+          5,
+          164,
+          203
+        ],
+        [
+          28,
+          5,
+          164,
+          203
+        ],
+        [
+          28,
+          5,
+          164,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "listening": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          29,
+          5,
+          163,
+          203
+        ],
+        [
+          34,
+          5,
+          157,
+          203
+        ],
+        [
+          32,
+          5,
+          160,
+          203
+        ],
+        [
+          29,
+          5,
+          163,
+          203
+        ],
+        [
+          32,
+          5,
+          160,
+          203
+        ],
+        [
+          29,
+          5,
+          162,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "comfort": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          34,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "dragging": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          22,
+          5,
+          169,
+          203
+        ],
+        [
+          24,
+          5,
+          168,
+          203
+        ],
+        [
+          18,
+          5,
+          173,
+          203
+        ],
+        [
+          20,
+          5,
+          171,
+          203
+        ],
+        [
+          20,
+          5,
+          172,
+          203
+        ],
+        [
+          23,
+          5,
+          168,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "angry": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          31,
+          5,
+          160,
+          203
+        ],
+        [
+          31,
+          5,
+          160,
+          203
+        ],
+        [
+          33,
+          5,
+          159,
+          203
+        ],
+        [
+          32,
+          5,
+          159,
+          203
+        ],
+        [
+          32,
+          5,
+          159,
+          203
+        ],
+        [
+          30,
+          5,
+          161,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "love": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          31,
+          5,
+          160,
+          203
+        ],
+        [
+          32,
+          5,
+          159,
+          203
+        ],
+        [
+          33,
+          5,
+          158,
+          203
+        ],
+        [
+          33,
+          5,
+          158,
+          203
+        ],
+        [
+          33,
+          5,
+          159,
+          203
+        ],
+        [
+          32,
+          5,
+          160,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "sleeping": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          32,
+          5,
+          159,
+          203
+        ],
+        [
+          33,
+          5,
+          158,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ],
+        [
+          33,
+          5,
+          159,
+          203
+        ],
+        [
+          32,
+          5,
+          159,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    },
+    "error": {
+      "ok": true,
+      "strip_size": [
+        1152,
+        208
+      ],
+      "frames": 6,
+      "alpha_bounds": [
+        [
+          34,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ],
+        [
+          35,
+          5,
+          157,
+          203
+        ],
+        [
+          35,
+          5,
+          156,
+          203
+        ]
+      ],
+      "adjacent_frames_differ": [
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "green_spill_pixels": 0,
+      "boundary_green_spill_pixels": 0,
+      "scaled_boundary_green_spill_pixels": 0
+    }
+  }
+}

@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nikki-os"
+version = "0.2.0"
+description = "A dual-renderer AI desktop companion for macOS and Windows"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "PyQt6>=6.7,<7",
+  "PyQt6-WebEngine>=6.7,<7",
+  "Pillow>=10,<12",
+  "requests>=2.31,<3",
+  "psutil>=5.9,<8",
+  "dashscope>=1.20,<2",
+  "edge-tts>=7.2.8,<8",
+  "qtawesome>=1.4.0,<2",
+  "jsonschema>=4.22,<5",
+]
+
+[project.optional-dependencies]
+voice = ["PyAudio>=0.2.14,<0.3"]
+windows = ["pygetwindow>=0.0.9,<0.1"]
+dev = ["pytest>=8,<9", "pytest-qt>=4.4,<5", "ruff>=0.12,<1", "pyinstaller>=6.14,<7"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 110
+exclude = [".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["B008", "E501", "RUF001", "RUF005", "RUF012", "SIM105", "SIM115", "SIM117"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyqt6"
+pythonpath = ["."]
+
+[tool.setuptools]
+py-modules = ["main"]

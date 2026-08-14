@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "method": "sequential same-machine renderer benchmark",
+  "duration_seconds_per_renderer": 900,
+  "fixed_window_size": [
+    430,
+    660
+  ],
+  "fixed_state_script": [
+    "idle",
+    "talking",
+    "dragging",
+    "roam_right"
+  ],
+  "results": {
+    "sprite": {
+      "renderer": "sprite",
+      "platform": "macOS-27.0-arm64-arm-64bit",
+      "python": "3.12.13",
+      "duration_seconds": 900,
+      "ready": true,
+      "cold_start_seconds": 0.491,
+      "states_exercised": [
+        "idle",
+        "talking",
+        "dragging",
+        "roam_right"
+      ],
+      "resources": {
+        "cpu_percent_process_tree": {
+          "samples": 899,
+          "mean": 1.594,
+          "median": 1.4,
+          "p95": 2.7,
+          "maximum": 20.7
+        },
+        "rss_mib_process_tree": {
+          "samples": 899,
+          "mean": 91.151,
+          "median": 100.453,
+          "p95": 123.406,
+          "maximum": 181.672
+        }
+      },
+      "frame_pacing": {
+        "sample_count": 3575,
+        "average_ms": 251.536,
+        "p95_ms": 265.319,
+        "maximum_ms": 1643.76,
+        "late_frame_ratio": 0.003636,
+        "native_rate": "state-dependent 4-10 fps"
+      },
+      "worker_exit_code": 0
+    },
+    "live2d": {
+      "renderer": "live2d",
+      "platform": "macOS-27.0-arm64-arm-64bit",
+      "python": "3.12.13",
+      "duration_seconds": 900,
+      "ready": true,
+      "cold_start_seconds": 0.759,
+      "states_exercised": [
+        "idle",
+        "talking",
+        "dragging",
+        "roam_right"
+      ],
+      "resources": {
+        "cpu_percent_process_tree": {
+          "samples": 900,
+          "mean": 41.479,
+          "median": 42.15,
+          "p95": 45.1,
+          "maximum": 67.7
+        },
+        "rss_mib_process_tree": {
+          "samples": 900,
+          "mean": 333.174,
+          "median": 298.164,
+          "p95": 550.219,
+          "maximum": 835.25
+        }
+      },
+      "frame_pacing": {
+        "sample_count": 53955,
+        "average_ms": 16.67317023445461,
+        "p95_ms": 17.399999998509884,
+        "maximum_ms": 114.20000000298023,
+        "late_frame_ratio": 0.00024094152534519508,
+        "native_rate": "WebGL display ticker"
+      },
+      "worker_exit_code": 0
+    }
+  },
+  "engineering_default_recommendation": "sprite",
+  "human_visual_panel": {
+    "status": "not_collected",
+    "required_viewers": 5,
+    "reason": "Viewer preference requires independent human judgments and is not synthesized."
+  },
+  "selection": "Use sprite as the production default on this machine; keep the other renderer selectable."
+}

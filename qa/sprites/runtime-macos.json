@@ -1,0 +1,33 @@
+{
+  "ok": true,
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "states": [
+    "idle",
+    "talking",
+    "thinking",
+    "listening",
+    "greeting",
+    "happy",
+    "comfort",
+    "sad",
+    "error",
+    "angry",
+    "visual_review",
+    "roam_left",
+    "roam_right",
+    "dragging",
+    "sleeping"
+  ],
+  "window_size": [
+    215,
+    330
+  ],
+  "green_dominant_pixels": {
+    "dark": 0,
+    "light": 0
+  },
+  "images": {
+    "dark": "qa/sprites/runtime-macos-dark.png",
+    "light": "qa/sprites/runtime-macos-light.png"
+  }
+}
